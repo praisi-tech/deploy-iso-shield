@@ -585,9 +585,9 @@ export default function FindingsPage() {
         actions={
           <div className="flex items-center gap-2">
             <button onClick={handleAutoGenerate} disabled={generating}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-400 text-sm font-medium transition-all disabled:opacity-50">
-              {generating ? <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> : <Zap className="w-4 h-4" />}
-              Auto-Generate
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 border border-amber-400 text-sm font-medium transition-all disabled:opacity-50">
+              {generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Zap className="w-4 h-4" style={{ color: 'white' }} />}
+              <span style={{ color: 'white', WebkitTextFillColor: 'white' }}>Auto-Generate</span>
             </button>
             <button onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all">
@@ -660,6 +660,7 @@ export default function FindingsPage() {
         <div className="flex gap-1.5 flex-wrap">
           {['all', 'critical', 'high', 'medium', 'low', 'informational'].map(s => (
             <button key={s} onClick={() => setSeverityFilter(s)}
+              style={severityFilter === s ? { color: '#4338ca' } : undefined}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${severityFilter === s ? 'bg-brand-600/25 border-brand-500/40 text-brand-300' : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'}`}>
               {s === 'all' ? 'All Severity' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
@@ -668,6 +669,7 @@ export default function FindingsPage() {
         <div className="flex gap-1.5 flex-wrap">
           {['all', 'open', 'in_progress', 'resolved', 'closed'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
+              style={statusFilter === s ? { color: '#4338ca' } : undefined}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${statusFilter === s ? 'bg-brand-600/25 border-brand-500/40 text-brand-300' : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'}`}>
               {s === 'all' ? 'All Status' : s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>

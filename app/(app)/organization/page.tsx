@@ -193,7 +193,7 @@ export default function OrganizationPage() {
           </div>
           {!editing ? (
             <button onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
               <Edit3 className="w-4 h-4" /> Edit Profile
             </button>
           ) : (

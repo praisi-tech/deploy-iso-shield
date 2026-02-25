@@ -45,6 +45,7 @@ const PHASE_ACCENT = [
   { bg: 'rgba(99,102,241,0.14)',  border: 'rgba(99,102,241,0.26)',  text: '#c7d2fe', icon: '#a5b4fc', dot: '#818cf8' }, // indigo
   { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.24)',  text: '#a7f3d0', icon: '#6ee7b7', dot: '#34d399' }, // emerald
   { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.22)',  text: '#fde68a', icon: '#fcd34d', dot: '#f59e0b' }, // amber
+    { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.22)',   text: '#fecaca', icon: '#fca5a5', dot: '#f87171' }, // red
 ]
 
 const AI_ACCENT = {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { Database } from '@/types/database'
 import type { ReportSnapshot, AuditReport } from '@/types/phase3'
 
 export async function getReports(organizationId: string) {
@@ -125,10 +126,10 @@ export async function generateReport(organizationId: string, config: {
       organization_id: organizationId,
       ...config,
       scope_description: org?.scope_description || null,
-      snapshot,
+      snapshot: snapshot as any, // Cast snapshot ke any agar tidak bentrok dengan tipe Json
       generated_by: user.id,
       generated_at: new Date().toISOString(),
-    })
+    } as Database['public']['Tables']['audit_reports']['Insert']) // Tambahkan casting di sini
     .select()
     .single()
 
@@ -140,8 +141,15 @@ export async function generateReport(organizationId: string, config: {
 
 export async function updateReport(id: string, updates: Partial<AuditReport>) {
   const supabase = createClient()
-  const { error } = await supabase.from('audit_reports').update(updates).eq('id', id)
+  
+  // Gunakan 'as any' atau casting ke tipe yang diharapkan Supabase
+  const { error } = await supabase
+    .from('audit_reports')
+    .update(updates as any) 
+    .eq('id', id)
+
   if (error) return { error: error.message }
+  
   revalidatePath('/report')
   return { success: true }
 }

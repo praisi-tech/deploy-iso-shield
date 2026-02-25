@@ -36,7 +36,9 @@ body {
 .text-slate-300 { color: #475569 !important; }
 .text-slate-200 { color: #334155 !important; }
 
-.text-white { color: #1e293b !important; }
+main .text-white:not(button):not(a):not([class*="bg-brand"]):not([class*="bg-amber"]):not([class*="bg-red"]):not([class*="bg-emerald"]) {
+  color: #1e293b !important;
+}
 
 .bg-\[\#0a0f1e\]  { background-color: #ffffff !important; }
 .bg-\[\#0d1424\]  { background-color: #ffffff !important; }

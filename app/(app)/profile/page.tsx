@@ -60,12 +60,14 @@ const activityColor: Record<ActivityItem['type'], string> = {
 }
 
 function formatDate(date: string) {
+  if (!date) return '—'
   return new Date(date).toLocaleDateString('en-US', {
     day: 'numeric', month: 'long', year: 'numeric'
   })
 }
 
 function formatRelative(date: string) {
+  if (!date) return 'Unknown'
   const diff = Date.now() - new Date(date).getTime()
   const days = Math.floor(diff / 86400000)
   if (days === 0) return 'Today'
@@ -120,26 +122,38 @@ export default function ProfilePage() {
     if (!user) { router.push('/auth/login'); return }
 
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    setProfile(p)
-    setFullName(p?.full_name || '')
+    const profileData = p as Profile
+    setProfile(profileData)
+    setFullName(profileData?.full_name || '')
 
-    if (p?.organization_id) {
-      const { data: o } = await supabase.from('organizations').select('*').eq('id', p.organization_id).single()
-      setOrg(o)
+    if (profileData?.organization_id) {
+      const { data: o } = await supabase.from('organizations').select('*').eq('id', profileData.organization_id).single()
+      setOrg(o as Organization)
     }
 
     const activities: ActivityItem[] = []
+    
+    // Fetch Assets
     const { data: assets } = await supabase.from('assets').select('id, name, created_at').eq('created_by', user.id).order('created_at', { ascending: false }).limit(3)
-    assets?.forEach(a => activities.push({ id: a.id, type: 'asset', label: 'Added Asset', name: a.name, date: a.created_at }))
+    assets?.forEach(a => activities.push({ id: a.id, type: 'asset', label: 'Added Asset', name: a.name, date: (a as any).created_at ?? '' }))
 
+    // Fetch Evidence
     const { data: evidences } = await supabase.from('evidence_files').select('id, file_name, uploaded_at').eq('uploaded_by', user.id).order('uploaded_at', { ascending: false }).limit(3)
-    evidences?.forEach(e => activities.push({ id: e.id, type: 'evidence', label: 'Uploaded Evidence', name: e.file_name, date: e.uploaded_at }))
+    evidences?.forEach(e => activities.push({ id: e.id, type: 'evidence', label: 'Uploaded Evidence', name: (e as any).file_name, date: (e as any).uploaded_at ?? '' }))
 
+    // Fetch Findings
     const { data: findings } = await supabase.from('audit_findings').select('id, title, created_at').eq('created_by', user.id).order('created_at', { ascending: false }).limit(3)
-    findings?.forEach(f => activities.push({ id: f.id, type: 'finding', label: 'Created Finding', name: f.title, date: f.created_at }))
+    findings?.forEach(f => activities.push({ id: f.id, type: 'finding', label: 'Created Finding', name: (f as any).title, date: (f as any).created_at ?? '' }))
 
+    // Fetch Assessments with cast to any[]
     const { data: assessments } = await supabase.from('control_assessments').select('id, notes, assessed_at').eq('assessed_by', user.id).order('assessed_at', { ascending: false }).limit(3)
-    assessments?.forEach(c => activities.push({ id: c.id, type: 'checklist', label: 'ISO Control Assessment', name: c.notes ? c.notes.slice(0, 40) + '...' : 'ISO Control Assessment', date: c.assessed_at }))
+    ;(assessments as any[])?.forEach(c => activities.push({ 
+      id: c.id, 
+      type: 'checklist', 
+      label: 'ISO Control Assessment', 
+      name: c.notes ? c.notes.slice(0, 40) + '...' : 'ISO Control Assessment', 
+      date: c.assessed_at ?? '' 
+    }))
 
     activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     setActivity(activities.slice(0, 8))
@@ -277,7 +291,7 @@ export default function ProfilePage() {
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFileChange} />
               <div className="flex gap-2">
                 <button onClick={handleUploadAvatar} disabled={!avatarFile || uploadingAvatar}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-medium transition-all disabled:opacity-40">
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-all disabled:opacity-40">
                   {uploadingAvatar ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {uploadingAvatar ? 'Uploading...' : 'Save Avatar'}
                 </button>
@@ -345,11 +359,8 @@ export default function ProfilePage() {
                 className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-sm cursor-not-allowed" />
               <p className="text-xs text-slate-400 mt-1">Email cannot be changed.</p>
             </div>
-            <button 
-              onClick={handleSaveProfile} 
-              disabled={savingProfile || fullName === profile.full_name}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-medium transition-all disabled:opacity-50"
-            >
+            <button onClick={handleSaveProfile} disabled={savingProfile || fullName === profile.full_name}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-all disabled:opacity-50">
               <Save className="w-4 h-4" />
               {savingProfile ? 'Saving...' : 'Save Changes'}
             </button>
@@ -392,7 +403,7 @@ export default function ProfilePage() {
               )}
             </div>
             <button onClick={handleChangePassword} disabled={savingPassword || !oldPassword || !newPassword || newPassword !== confirmPassword}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white/80 text-sm font-medium transition-all disabled:opacity-50">
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-all disabled:opacity-50">
               <Lock className="w-4 h-4" />
               {savingPassword ? 'Verifying...' : 'Update Password'}
             </button>

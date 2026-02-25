@@ -48,7 +48,7 @@ export default async function AssetsPage() {
         actions={
           <Link
             href="/assets/new"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white/80 text-sm font-medium transition-all"
           >
             <Plus className="w-4 h-4" />
             Add Asset
@@ -120,14 +120,14 @@ export default async function AssetsPage() {
                           )
                         })}
                       </div>
-                      <span className="text-xs text-slate-500 font-mono">{asset.criticality_score.toFixed(1)}</span>
+                      <span className="text-xs text-slate-500 font-mono">{(asset.criticality_score ?? 0).toFixed(1)}</span>
                     </div>
                   </td>
                   <td>
-                    <RiskBadge level={asset.criticality} />
+                    <RiskBadge level={asset.criticality ?? 'medium'} />
                   </td>
                   <td className="text-slate-500 text-xs">{asset.location || '—'}</td>
-                  <td className="text-slate-600 text-xs">{formatDate(asset.created_at)}</td>
+                  <td className="text-slate-600 text-xs">{asset.created_at ? formatDate(asset.created_at) : '—'}</td>
                   <td>
                     <Link
                       href={`/assets/${asset.id}`}

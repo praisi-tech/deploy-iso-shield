@@ -344,7 +344,7 @@ function CyberBackground() {
   )
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/dashboard'
@@ -496,5 +496,15 @@ export default function LoginPage() {
         </div>
       </div>
     </>
+  )
+}
+
+import { Suspense } from 'react'
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#04060f' }} />}>
+      <LoginContent />
+    </Suspense>
   )
 }

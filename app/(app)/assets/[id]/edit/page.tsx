@@ -8,7 +8,10 @@ import { createClient } from '@/lib/supabase/client'
 import CIASlider from '@/components/ui/CIASlider'
 import PageHeader from '@/components/ui/PageHeader'
 
-const assetTypes = [
+// Definisi type asset yang valid sesuai skema database
+type AssetType = 'hardware' | 'software' | 'data' | 'service' | 'personnel' | 'facility'
+
+const assetTypes: { value: AssetType; label: string; desc: string }[] = [
   { value: 'hardware', label: '🖥️ Hardware', desc: 'Physical devices, servers, workstations' },
   { value: 'software', label: '💿 Software', desc: 'Applications, OS, firmware' },
   { value: 'data', label: '📁 Data', desc: 'Databases, files, documents' },
@@ -20,7 +23,7 @@ const assetTypes = [
 interface FormState {
   name: string
   description: string
-  type: string
+  type: AssetType
   owner: string
   location: string
   ip_address: string
@@ -46,7 +49,7 @@ export default function EditAssetPage() {
   const [form, setForm] = useState<FormState>({
     name: '',
     description: '',
-    type: 'software',
+    type: 'software', // Default value
     owner: '',
     location: '',
     ip_address: '',
@@ -73,7 +76,7 @@ export default function EditAssetPage() {
     setForm({
       name: data.name || '',
       description: data.description || '',
-      type: data.type || 'software',
+      type: (data.type as AssetType) || 'software',
       owner: data.owner || '',
       location: data.location || '',
       ip_address: data.ip_address || '',
@@ -94,6 +97,7 @@ export default function EditAssetPage() {
 
     const supabase = createClient()
 
+    // Karena interface FormState sudah sinkron dengan database, kita bisa langsung kirim form
     const { error: err } = await supabase
       .from('assets')
       .update({
@@ -132,7 +136,7 @@ export default function EditAssetPage() {
     // Soft delete — set is_active = false
     const { error: err } = await supabase
       .from('assets')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
 
     if (err) {
@@ -145,8 +149,9 @@ export default function EditAssetPage() {
   }
 
   // Preview criticality
-  const score = (form.confidentiality * 0.4 + form.integrity * 0.35 + form.availability * 0.25).toFixed(2)
-  const criticality = parseFloat(score) >= 4 ? 'Critical' : parseFloat(score) >= 3 ? 'High' : parseFloat(score) >= 2 ? 'Medium' : 'Low'
+  const scoreNum = (form.confidentiality * 0.4 + form.integrity * 0.35 + form.availability * 0.25)
+  const score = scoreNum.toFixed(2)
+  const criticality = scoreNum >= 4 ? 'Critical' : scoreNum >= 3 ? 'High' : scoreNum >= 2 ? 'Medium' : 'Low'
   const critColor = {
     Critical: 'text-red-400',
     High: 'text-orange-400',
@@ -157,7 +162,8 @@ export default function EditAssetPage() {
   if (loading) {
     return (
       <div className="p-8 max-w-3xl mx-auto">
-        <div className="glass rounded-xl p-16 text-center">
+        <div className="glass rounded-xl p-16 text-center border border-white/5 bg-white/5">
+          <RefreshCw className="w-8 h-8 text-slate-700 animate-spin mx-auto mb-4" />
           <p className="text-slate-500 text-sm animate-pulse">Memuat data asset...</p>
         </div>
       </div>
@@ -179,7 +185,7 @@ export default function EditAssetPage() {
         }
       />
 
-      {/* Error */}
+      {/* Error & Success Messages */}
       {error && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
@@ -187,7 +193,6 @@ export default function EditAssetPage() {
         </div>
       )}
 
-      {/* Success */}
       {success && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
           <Save className="w-5 h-5 text-green-400 flex-shrink-0" />
@@ -197,15 +202,15 @@ export default function EditAssetPage() {
 
       {/* Delete Confirm Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4" style={{ background: '#0d1424' }}>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="rounded-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4 shadow-2xl" style={{ background: '#0d1424' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
               <h3 className="font-semibold text-slate-200">Hapus Asset?</h3>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-400 leading-relaxed">
               Asset <span className="text-slate-200 font-medium">"{form.name}"</span> akan dihapus dari inventaris. Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex gap-2 pt-1">
@@ -221,9 +226,7 @@ export default function EditAssetPage() {
                 disabled={deleting}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-all disabled:opacity-60"
               >
-                {deleting
-                  ? <RefreshCw className="w-4 h-4 animate-spin" />
-                  : <Trash2 className="w-4 h-4" />}
+                {deleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 {deleting ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
             </div>
@@ -237,22 +240,22 @@ export default function EditAssetPage() {
           <h3 className="text-sm font-semibold text-slate-300 mb-5">Informasi Asset</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="label-dark">Nama Asset *</label>
+              <label className="label-dark block mb-1.5">Nama Asset *</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 required
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="e.g., Main Database Server"
               />
             </div>
             <div className="col-span-2">
-              <label className="label-dark">Deskripsi</label>
+              <label className="label-dark block mb-1.5">Deskripsi</label>
               <textarea
                 value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
-                className="input-dark h-20 resize-none"
+                className="input-dark w-full h-20 resize-none"
                 placeholder="Deskripsi singkat asset..."
               />
             </div>
@@ -275,7 +278,7 @@ export default function EditAssetPage() {
                 }`}
               >
                 <p className="text-sm mb-0.5">{label}</p>
-                <p className="text-[11px] text-slate-600">{desc}</p>
+                <p className="text-[11px] text-slate-600 leading-tight">{desc}</p>
               </button>
             ))}
           </div>
@@ -286,59 +289,59 @@ export default function EditAssetPage() {
           <h3 className="text-sm font-semibold text-slate-300 mb-5">Detail Asset</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label-dark">Owner / Penanggung Jawab</label>
+              <label className="label-dark block mb-1.5">Owner / Penanggung Jawab</label>
               <input
                 type="text"
                 value={form.owner}
                 onChange={e => setForm({ ...form, owner: e.target.value })}
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="IT Department / John Doe"
               />
             </div>
             <div>
-              <label className="label-dark">Lokasi</label>
+              <label className="label-dark block mb-1.5">Lokasi</label>
               <input
                 type="text"
                 value={form.location}
                 onChange={e => setForm({ ...form, location: e.target.value })}
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="Data Center A / Cloud AWS"
               />
             </div>
             <div>
-              <label className="label-dark">Vendor / Manufacturer</label>
+              <label className="label-dark block mb-1.5">Vendor / Manufacturer</label>
               <input
                 type="text"
                 value={form.vendor}
                 onChange={e => setForm({ ...form, vendor: e.target.value })}
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="Microsoft, AWS, Oracle..."
               />
             </div>
             <div>
-              <label className="label-dark">Versi</label>
+              <label className="label-dark block mb-1.5">Versi</label>
               <input
                 type="text"
                 value={form.version}
                 onChange={e => setForm({ ...form, version: e.target.value })}
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="e.g., 14.0.1, v2.3"
               />
             </div>
-            <div>
-              <label className="label-dark">IP Address</label>
+            <div className="col-span-2">
+              <label className="label-dark block mb-1.5">IP Address</label>
               <input
                 type="text"
                 value={form.ip_address}
                 onChange={e => setForm({ ...form, ip_address: e.target.value })}
-                className="input-dark"
+                className="input-dark w-full"
                 placeholder="192.168.1.100"
               />
             </div>
           </div>
         </div>
 
-        {/* CIA Triad */}
+        {/* CIA Triad Rating */}
         <div className="glass rounded-xl p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-slate-300">CIA Triad Rating</h3>
@@ -381,18 +384,17 @@ export default function EditAssetPage() {
 
         {/* Notes */}
         <div className="glass rounded-xl p-6">
-          <label className="label-dark">Catatan Tambahan</label>
+          <label className="label-dark block mb-1.5">Catatan Tambahan</label>
           <textarea
             value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
-            className="input-dark h-24 resize-none"
+            className="input-dark w-full h-24 resize-none"
             placeholder="Catatan, dependensi, atau konteks tambahan..."
           />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
-          {/* Hapus asset */}
+        <div className="flex items-center justify-between pb-10">
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
@@ -414,9 +416,7 @@ export default function EditAssetPage() {
               disabled={saving || success}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all disabled:opacity-50"
             >
-              {saving
-                ? <RefreshCw className="w-4 h-4 animate-spin" />
-                : <Save className="w-4 h-4" />}
+              {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>

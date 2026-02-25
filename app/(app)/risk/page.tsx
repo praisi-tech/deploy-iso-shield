@@ -209,7 +209,7 @@ export default function RiskPage() {
               <div className="space-y-2">
                 {items.slice(0, 4).map(item => (
                   <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/40">
-                    <RiskBadge level={item.risk_level} size="sm" />
+                    <RiskBadge level={item.risk_level ?? 'negligible'} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-slate-300 truncate">{item.vulnerability?.name}</p>
                       <p className="text-[10px] text-slate-600">{(item.asset as any)?.name}</p>
@@ -299,7 +299,7 @@ export default function RiskPage() {
                     <span className="text-xs text-slate-600 ml-1">/25</span>
                   </td>
                   <td>
-                    <RiskBadge level={item.risk_level} />
+                    <RiskBadge level={item.risk_level ?? 'negligible'} />
                   </td>
                 </tr>
               ))}

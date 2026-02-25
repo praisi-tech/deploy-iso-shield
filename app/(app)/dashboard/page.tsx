@@ -63,7 +63,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link href="/assets/new"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
             <Plus className="w-4 h-4" /> Add Asset
           </Link>
         </div>
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
                 <h3 className="text-sm font-semibold text-slate-700">High Risk Items</h3>
               </div>
               <Link href="/risk" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors">
-                Lihat semua <ChevronRight className="w-3.5 h-3.5" />
+                 View All<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
             <div className="p-3">
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
                 <h3 className="text-sm font-semibold text-slate-700">Recent Assets</h3>
               </div>
               <Link href="/assets" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors">
-                Lihat semua <ChevronRight className="w-3.5 h-3.5" />
+                View All <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
             <div className="p-3">

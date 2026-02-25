@@ -25,7 +25,7 @@ const opinionConfig = {
 function ReportPreview({ report, findings }: { report: AuditReport; findings: any[] }) {
   const snap = report.snapshot as ReportSnapshot
   const opinion = report.final_opinion ? opinionConfig[report.final_opinion] : null
-  const OpinionIcon = opinion?.icon
+  const OpinionIcon = opinion?.icon ?? null
 
   const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 }
   const sorted = [...findings].sort((a, b) => (sevOrder[a.severity] ?? 5) - (sevOrder[b.severity] ?? 5))
@@ -69,7 +69,7 @@ function ReportPreview({ report, findings }: { report: AuditReport; findings: an
 
         {opinion && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: `1.5px solid ${opinion.barColor}`, borderRadius: 24, padding: '8px 20px', color: opinion.barColor }}>
-            <OpinionIcon size={16} />
+            {OpinionIcon && <OpinionIcon size={16} />}
             <span style={{ fontWeight: 600, fontSize: 13 }}>Final Opinion: {opinion.label}</span>
           </div>
         )}
@@ -391,7 +391,7 @@ export default function ReportPage() {
         subtitle="Generate, preview, and export ISO 27001 audit reports as PDF"
         actions={
           <button onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all">
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white/80 text-sm font-medium transition-all">
             <Plus className="w-4 h-4" /> Generate Report
           </button>
         }
@@ -411,7 +411,7 @@ export default function ReportPage() {
           {reports.map(report => {
             const snap = report.snapshot as ReportSnapshot
             const opinion = report.final_opinion ? opinionConfig[report.final_opinion] : null
-            const OpIcon = opinion?.icon
+            const OpIcon = opinion?.icon ?? null
             return (
               <div key={report.id} className="glass rounded-xl p-5 card-hover group">
                 <div className="flex items-start gap-4">
