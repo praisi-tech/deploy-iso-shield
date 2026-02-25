@@ -344,6 +344,34 @@ function CyberBackground() {
   )
 }
 
+/**
+ * After a successful login, check if the user's email has a pending invite.
+ * If found, assign them to the org + role and delete the invite row.
+ */
+async function processPendingInvite(supabase: ReturnType<typeof createClient>, userId: string, email: string) {
+  const sb = supabase as any  // bypass strict generated types
+
+  const { data: invite } = await sb
+    .from('pending_invites')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .single()
+
+  if (!invite) return
+
+  const { data: profile } = await sb
+    .from('profiles').select('organization_id').eq('id', userId).single()
+
+  if (profile?.organization_id) return
+
+  await sb
+    .from('profiles')
+    .update({ organization_id: invite.organization_id, role: invite.role })
+    .eq('id', userId)
+
+  await sb.from('pending_invites').delete().eq('id', invite.id)
+}
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -368,7 +396,7 @@ function LoginContent() {
     setError(null)
     const supabase = createClient()
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) {
         setError(
           authError.message === 'Invalid login credentials'
@@ -378,6 +406,12 @@ function LoginContent() {
         setLoading(false)
         return
       }
+
+      // Check and apply any pending invite for this email
+      if (data.user) {
+        await processPendingInvite(supabase, data.user.id, email)
+      }
+
       router.refresh()
       setTimeout(() => router.push(redirectTo), 100)
     } catch {
