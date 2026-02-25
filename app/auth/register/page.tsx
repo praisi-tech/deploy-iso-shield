@@ -1,10 +1,347 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Shield, Lock, Mail, User, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+
+  .rg-root {
+    min-height: 100vh;
+    background: #04060f;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .rg-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .rg-blob1 {
+    width: 600px; height: 600px;
+    top: -150px; left: -150px;
+    background: radial-gradient(circle, rgba(109,40,217,0.18) 0%, transparent 70%);
+    animation: rg-blob1 12s ease-in-out infinite;
+  }
+  .rg-blob2 {
+    width: 500px; height: 500px;
+    bottom: -100px; right: -100px;
+    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+    animation: rg-blob2 15s ease-in-out infinite;
+  }
+  .rg-blob3 {
+    width: 350px; height: 350px;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%);
+    animation: rg-blob3 18s ease-in-out infinite;
+  }
+  .rg-scanlines {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 1;
+    background-image: repeating-linear-gradient(
+      to bottom, transparent 0px, transparent 3px,
+      rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
+    );
+  }
+  .rg-wrap {
+    position: relative; z-index: 10;
+    width: 100%; max-width: 440px;
+    animation: rg-slideup 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    padding: 1rem 0;
+  }
+  .rg-logo-area { text-align: center; margin-bottom: 1.5rem; }
+  .rg-logo-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 60px; height: 60px; border-radius: 18px;
+    background: linear-gradient(135deg, rgba(109,40,217,0.3), rgba(59,130,246,0.2));
+    border: 1px solid rgba(139,92,246,0.4);
+    margin-bottom: 1rem;
+    box-shadow: 0 0 30px rgba(109,40,217,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .rg-logo-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 30%, rgba(139,92,246,0.9));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .rg-logo-sub {
+    font-size: 0.78rem; color: rgba(148,163,184,0.6);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.3rem;
+  }
+  .rg-card {
+    background: rgba(13,17,33,0.88);
+    border: 1px solid rgba(139,92,246,0.15);
+    border-radius: 20px; padding: 2rem 2.5rem;
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 24px 64px rgba(0,0,0,0.55),
+      0 0 80px rgba(109,40,217,0.08);
+    position: relative; overflow: hidden;
+  }
+  .rg-card-shimmer {
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent);
+  }
+  .rg-corner-tl {
+    position: absolute; top: 12px; left: 12px;
+    width: 16px; height: 16px;
+    border-top: 1.5px solid rgba(139,92,246,0.45);
+    border-left: 1.5px solid rgba(139,92,246,0.45);
+    border-radius: 2px 0 0 0;
+  }
+  .rg-corner-br {
+    position: absolute; bottom: 12px; right: 12px;
+    width: 16px; height: 16px;
+    border-bottom: 1.5px solid rgba(139,92,246,0.45);
+    border-right: 1.5px solid rgba(139,92,246,0.45);
+    border-radius: 0 0 2px 0;
+  }
+  .rg-card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.3rem;
+  }
+  .rg-card-sub {
+    font-size: 0.85rem; color: rgba(148,163,184,0.55); margin-bottom: 1.5rem;
+  }
+  .rg-alert {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.875rem 1rem; border-radius: 10px; margin-bottom: 1.25rem;
+  }
+  .rg-alert-error {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    animation: rg-shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97) both;
+  }
+  .rg-alert-success {
+    background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+  }
+  .rg-alert-error-text { font-size: 0.82rem; color: #f87171; }
+  .rg-alert-success-text { font-size: 0.82rem; color: #34d399; }
+  .rg-field { margin-bottom: 1rem; }
+  .rg-label {
+    display: block; font-size: 0.72rem; font-weight: 500;
+    color: rgba(148,163,184,0.65); margin-bottom: 0.45rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .rg-input-wrap { position: relative; }
+  .rg-input-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: rgba(148,163,184,0.35); pointer-events: none;
+  }
+  .rg-input {
+    width: 100%; padding: 0.8rem 1rem 0.8rem 2.75rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; color: #f1f5f9;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    outline: none; box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .rg-input::placeholder { color: rgba(148,163,184,0.3); }
+  .rg-input:focus {
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+    background: rgba(139,92,246,0.05);
+  }
+  .rg-input:hover:not(:focus) {
+    border-color: rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+  }
+  .rg-input-pr { padding-right: 2.75rem; }
+  .rg-eye-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: rgba(148,163,184,0.4); display: flex; padding: 0;
+    transition: color 0.2s;
+  }
+  .rg-eye-btn:hover { color: rgba(148,163,184,0.9); }
+  .rg-strength-bar {
+    display: flex; gap: 4px; margin-top: 8px; align-items: center;
+  }
+  .rg-strength-seg {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    transition: background 0.3s;
+  }
+  .rg-strength-label {
+    font-size: 0.7rem; color: rgba(148,163,184,0.5);
+    margin-left: 6px; white-space: nowrap;
+  }
+  .rg-btn {
+    width: 100%; padding: 0.875rem 1rem; border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 0.5rem; margin-top: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+  }
+  .rg-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(124,58,237,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .rg-btn:active:not(:disabled) { transform: translateY(0); }
+  .rg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .rg-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: #fff; border-radius: 50%;
+    animation: rg-spin 0.7s linear infinite;
+  }
+  .rg-divider {
+    border: none; border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 1.25rem 0 1rem;
+  }
+  .rg-login-row {
+    text-align: center; font-size: 0.84rem; color: rgba(148,163,184,0.5);
+  }
+  .rg-login-link {
+    color: #a78bfa; text-decoration: none; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .rg-login-link:hover { color: #c4b5fd; }
+  @keyframes rg-slideup {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes rg-blob1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%     { transform: translate(40px,30px) scale(1.05); }
+    66%     { transform: translate(-20px,50px) scale(0.95); }
+  }
+  @keyframes rg-blob2 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%     { transform: translate(-50px,-30px) scale(1.08); }
+    66%     { transform: translate(30px,-50px) scale(0.92); }
+  }
+  @keyframes rg-blob3 {
+    0%,100% { transform: translate(-50%,-50%) scale(1); }
+    50%     { transform: translate(-50%,-50%) scale(1.15); }
+  }
+  @keyframes rg-shake {
+    10%,90%     { transform: translateX(-2px); }
+    20%,80%     { transform: translateX(4px); }
+    30%,50%,70% { transform: translateX(-4px); }
+    40%,60%     { transform: translateX(4px); }
+  }
+  @keyframes rg-spin { to { transform: rotate(360deg); } }
+  @media (max-width: 480px) {
+    .rg-card { padding: 1.75rem 1.5rem; }
+    .rg-logo-title { font-size: 1.5rem; }
+  }
+`
+
+function ClientStyles() {
+  useEffect(() => {
+    const id = 'rg-styles'
+    if (document.getElementById(id)) return
+    const el = document.createElement('style')
+    el.id = id
+    el.textContent = CSS
+    document.head.appendChild(el)
+    return () => { document.getElementById(id)?.remove() }
+  }, [])
+  return null
+}
+
+function CyberBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animId: number
+    let W = window.innerWidth
+    let H = window.innerHeight
+    canvas.width = W
+    canvas.height = H
+
+    type Node = { x: number; y: number; vx: number; vy: number; r: number; a: number }
+    const nodes: Node[] = Array.from({ length: Math.floor((W * H) / 18000) }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 1, a: Math.random() * 0.5 + 0.2,
+    }))
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H)
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy
+        if (n.x < 0 || n.x > W) n.vx *= -1
+        if (n.y < 0 || n.y > H) n.vy *= -1
+      }
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x
+          const dy = nodes[i].y - nodes[j].y
+          const d = Math.sqrt(dx * dx + dy * dy)
+          if (d < 160) {
+            ctx.beginPath()
+            ctx.strokeStyle = `rgba(99,102,241,${(1 - d / 160) * 0.15})`
+            ctx.lineWidth = 0.8
+            ctx.moveTo(nodes[i].x, nodes[i].y)
+            ctx.lineTo(nodes[j].x, nodes[j].y)
+            ctx.stroke()
+          }
+        }
+      }
+      for (const n of nodes) {
+        ctx.beginPath()
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(139,92,246,${n.a})`
+        ctx.fill()
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4)
+        g.addColorStop(0, `rgba(139,92,246,${n.a * 0.3})`)
+        g.addColorStop(1, 'transparent')
+        ctx.beginPath()
+        ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2)
+        ctx.fillStyle = g
+        ctx.fill()
+      }
+      animId = requestAnimationFrame(tick)
+    }
+    tick()
+
+    const onResize = () => {
+      W = window.innerWidth; H = window.innerHeight
+      canvas.width = W; canvas.height = H
+    }
+    window.addEventListener('resize', onResize)
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', onResize) }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}
+    />
+  )
+}
+
+const strengthMeta = [
+  { label: '', color: '' },
+  { label: 'Weak',   color: '#ef4444' },
+  { label: 'Fair',   color: '#f97316' },
+  { label: 'Good',   color: '#eab308' },
+  { label: 'Strong', color: '#22c55e' },
+]
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -13,6 +350,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const passwordStrength = (p: string) => {
     let score = 0
@@ -24,8 +364,6 @@ export default function RegisterPage() {
   }
 
   const strength = passwordStrength(form.password)
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength]
-  const strengthColor = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'][strength]
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,173 +371,162 @@ export default function RegisterPage() {
       setError('Passwords do not match')
       return
     }
-
     setLoading(true)
     setError(null)
-
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: {
-        data: { full_name: form.full_name },
-      },
+      options: { data: { full_name: form.full_name } },
     })
-
     if (error) {
       setError(error.message)
       setLoading(false)
       return
     }
-
     setSuccess(true)
-    setTimeout(() => {
-      router.push('/dashboard')
-      router.refresh()
-    }, 1500)
+    setTimeout(() => { router.push('/dashboard'); router.refresh() }, 1500)
+  }
+
+  if (!mounted) {
+    return <div style={{ minHeight: '100vh', background: '#04060f' }} />
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] bg-grid flex items-center justify-center p-4">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-      </div>
+    <>
+      <ClientStyles />
+      <div className="rg-root">
+        <div className="rg-blob rg-blob1" />
+        <div className="rg-blob rg-blob2" />
+        <div className="rg-blob rg-blob3" />
+        <div className="rg-scanlines" />
+        <CyberBackground />
 
-      <div className="w-full max-w-md relative animate-fade-up">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600/20 border border-brand-500/30 mb-4 glow-brand">
-            <Shield className="w-7 h-7 text-brand-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">ISO Shield</h1>
-          <p className="text-slate-500 text-sm mt-1">ISO 27001 Risk & Audit Platform</p>
-        </div>
-
-        <div className="glass rounded-2xl p-8">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white">Create your account</h2>
-            <p className="text-slate-500 text-sm mt-1">Start your ISO 27001 audit journey</p>
+        <div className="rg-wrap">
+          {/* Logo */}
+          <div className="rg-logo-area">
+            <div className="rg-logo-icon">
+              <Shield size={28} color="#a78bfa" />
+            </div>
+            <div className="rg-logo-title">ISO Shield</div>
+            <div className="rg-logo-sub">Risk &amp; Audit Platform</div>
           </div>
 
-          {success && (
-            <div className="mb-5 flex items-center gap-3 p-3.5 rounded-lg bg-green-500/10 border border-green-500/20">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <p className="text-sm text-green-400">Account created! Redirecting...</p>
-            </div>
-          )}
+          {/* Card */}
+          <div className="rg-card">
+            <div className="rg-card-shimmer" />
+            <div className="rg-corner-tl" />
+            <div className="rg-corner-br" />
 
-          {error && (
-            <div className="mb-5 flex items-start gap-3 p-3.5 rounded-lg bg-red-500/10 border border-red-500/20">
-              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
+            <div className="rg-card-title">Create your account</div>
+            <div className="rg-card-sub">Start your ISO 27001 audit journey</div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="label-dark">Full name</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  value={form.full_name}
-                  onChange={e => setForm({ ...form, full_name: e.target.value })}
-                  required
-                  className="input-dark pl-10"
-                  placeholder="John Doe"
-                />
+            {success && (
+              <div className="rg-alert rg-alert-success">
+                <CheckCircle size={16} color="#34d399" style={{ flexShrink: 0, marginTop: 1 }} />
+                <span className="rg-alert-success-text">Account created! Redirecting...</span>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="label-dark">Email address</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  required
-                  className="input-dark pl-10"
-                  placeholder="you@company.com"
-                />
+            {error && (
+              <div className="rg-alert rg-alert-error">
+                <AlertCircle size={16} color="#f87171" style={{ flexShrink: 0, marginTop: 1 }} />
+                <span className="rg-alert-error-text">{error}</span>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="label-dark">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  required
-                  minLength={8}
-                  className="input-dark pl-10 pr-10"
-                  placeholder="Min. 8 characters"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {form.password && (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex gap-1 flex-1">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength ? strengthColor : 'bg-slate-700'}`} />
-                    ))}
-                  </div>
-                  <span className="text-xs text-slate-500">{strengthLabel}</span>
+            <form onSubmit={handleSubmit}>
+              {/* Full Name */}
+              <div className="rg-field">
+                <label className="rg-label">Full name</label>
+                <div className="rg-input-wrap">
+                  <User size={15} className="rg-input-icon" />
+                  <input
+                    type="text" value={form.full_name} required
+                    placeholder="John Doe"
+                    className="rg-input"
+                    onChange={e => setForm({ ...form, full_name: e.target.value })}
+                  />
                 </div>
-              )}
-            </div>
-
-            <div>
-              <label className="label-dark">Confirm password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="password"
-                  value={form.confirm}
-                  onChange={e => setForm({ ...form, confirm: e.target.value })}
-                  required
-                  className="input-dark pl-10"
-                  placeholder="Repeat password"
-                />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading || success}
-              className="w-full py-3 px-4 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium 
-                         transition-all duration-200 flex items-center justify-center gap-2 
-                         disabled:opacity-50 disabled:cursor-not-allowed glow-brand mt-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating account...
-                </>
-              ) : 'Create account'}
-            </button>
-          </form>
+              {/* Email */}
+              <div className="rg-field">
+                <label className="rg-label">Email address</label>
+                <div className="rg-input-wrap">
+                  <Mail size={15} className="rg-input-icon" />
+                  <input
+                    type="email" value={form.email} required
+                    placeholder="you@company.com"
+                    className="rg-input"
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+              </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-            <p className="text-slate-500 text-sm">
+              {/* Password */}
+              <div className="rg-field">
+                <label className="rg-label">Password</label>
+                <div className="rg-input-wrap">
+                  <Lock size={15} className="rg-input-icon" />
+                  <input
+                    type={showPassword ? 'text' : 'password'} value={form.password} required
+                    minLength={8} placeholder="Min. 8 characters"
+                    className="rg-input rg-input-pr"
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                  />
+                  <button type="button" className="rg-eye-btn" onClick={() => setShowPassword(v => !v)}>
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {form.password && (
+                  <div className="rg-strength-bar">
+                    {[1, 2, 3, 4].map(i => (
+                      <div
+                        key={i}
+                        className="rg-strength-seg"
+                        style={{ background: i <= strength ? strengthMeta[strength].color : undefined }}
+                      />
+                    ))}
+                    <span className="rg-strength-label" style={{ color: strengthMeta[strength].color }}>
+                      {strengthMeta[strength].label}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="rg-field">
+                <label className="rg-label">Confirm password</label>
+                <div className="rg-input-wrap">
+                  <Lock size={15} className="rg-input-icon" />
+                  <input
+                    type="password" value={form.confirm} required
+                    placeholder="Repeat password"
+                    className="rg-input"
+                    onChange={e => setForm({ ...form, confirm: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading || success} className="rg-btn">
+                {loading ? (
+                  <>
+                    <div className="rg-spinner" />
+                    Creating account...
+                  </>
+                ) : 'Create account'}
+              </button>
+            </form>
+
+            <hr className="rg-divider" />
+            <div className="rg-login-row">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-brand-400 hover:text-brand-300 transition-colors font-medium">
-                Sign in
-              </Link>
-            </p>
+              <Link href="/auth/login" className="rg-login-link">Sign in</Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
