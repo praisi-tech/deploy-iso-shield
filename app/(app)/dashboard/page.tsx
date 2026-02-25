@@ -59,7 +59,7 @@ export default async function DashboardPage() {
               Welcome back, {profile.full_name?.split(' ')[0] || 'User'} 👋
             </h1>
             <p className="text-sm text-slate-400 mt-0.5">
-              {organization.name} · {new Date().toLocaleDateString('id-ID', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {organization.name} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <Link href="/assets/new"
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">Risk Distribution</h3>
-                <p className="text-[10px] text-slate-400">Per level vulnerability</p>
+                <p className="text-[10px] text-slate-400">By vulnerability level</p>
               </div>
             </div>
             <RiskBarChart data={stats.riskDistribution} />
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">Asset by Type</h3>
-                <p className="text-[10px] text-slate-400">Komposisi tipe asset</p>
+                <p className="text-[10px] text-slate-400">Asset type composition</p>
               </div>
             </div>
             <AssetDonutChart data={stats.assetsByType} />
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">Security Score</h3>
-                <p className="text-[10px] text-slate-400">Estimasi postur keamanan</p>
+                <p className="text-[10px] text-slate-400">Estimated security posture</p>
               </div>
             </div>
             <SecurityScoreGauge score={securityScore} />
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
                 <h3 className="text-sm font-semibold text-slate-700">High Risk Items</h3>
               </div>
               <Link href="/risk" className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors">
-                 View All<ChevronRight className="w-3.5 h-3.5" />
+                  View All<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
             <div className="p-3">
@@ -177,8 +177,8 @@ export default async function DashboardPage() {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
                     <ShieldAlert className="w-6 h-6 text-emerald-500" />
                   </div>
-                  <p className="text-sm font-medium text-slate-600">Tidak ada high-risk findings</p>
-                  <p className="text-xs text-slate-400 mt-1">Postur keamananmu terlihat baik!</p>
+                  <p className="text-sm font-medium text-slate-600">No high-risk findings</p>
+                  <p className="text-xs text-slate-400 mt-1">Your security posture looks great!</p>
                 </div>
               )}
             </div>
@@ -218,9 +218,9 @@ export default async function DashboardPage() {
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
                     <Server className="w-6 h-6 text-indigo-400" />
                   </div>
-                  <p className="text-sm font-medium text-slate-600">Belum ada asset</p>
+                  <p className="text-sm font-medium text-slate-600">No assets found</p>
                   <Link href="/assets/new" className="text-xs text-indigo-500 hover:text-indigo-700 mt-1 inline-block font-medium transition-colors">
-                    + Tambah asset pertama
+                    + Add your first asset
                   </Link>
                 </div>
               )}

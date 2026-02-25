@@ -52,7 +52,7 @@ function InfoRow({ label, value, icon: Icon }: { label: string; value?: string |
       <div className="flex-1 min-w-0">
         <p className="text-xs text-slate-500 mb-0.5">{label}</p>
         <p className="text-sm text-slate-800 font-medium break-words">
-          {value || <span className="text-slate-400 italic font-normal">Belum diisi</span>}
+          {value || <span className="text-slate-400 italic font-normal">Not filled yet</span>}
         </p>
       </div>
     </div>
@@ -124,7 +124,7 @@ export default function OrganizationPage() {
       setOrg(newOrg)
     }
     setSaving(false); setEditing(false)
-    setFeedback({ type: 'success', msg: 'Profil organisasi berhasil disimpan!' })
+    setFeedback({ type: 'success', msg: 'Organization profile saved successfully!' })
     setTimeout(() => setFeedback(null), 3500)
   }
 
@@ -135,12 +135,12 @@ export default function OrganizationPage() {
     const ext = logoFile.name.split('.').pop()
     const path = `org-logos/${org.id}.${ext}`
     const { error: uploadError } = await supabase.storage.from('avatars').upload(path, logoFile, { upsert: true, contentType: logoFile.type })
-    if (uploadError) { setFeedback({ type: 'error', msg: 'Gagal upload: ' + uploadError.message }); setUploadingLogo(false); return }
+    if (uploadError) { setFeedback({ type: 'error', msg: 'Upload failed: ' + uploadError.message }); setUploadingLogo(false); return }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
     await supabase.from('organizations').update({ logo_url: publicUrl } as any).eq('id', org.id)
     setOrg(prev => prev ? { ...prev, logo_url: publicUrl } as any : prev)
     setForm(prev => ({ ...prev, logo_url: publicUrl }))
-    setFeedback({ type: 'success', msg: 'Logo berhasil diperbarui!' })
+    setFeedback({ type: 'success', msg: 'Logo updated successfully!' })
     setShowLogoModal(false); setLogoFile(null); setLogoPreview(null)
     setUploadingLogo(false)
     setTimeout(() => setFeedback(null), 3500)
@@ -154,7 +154,7 @@ export default function OrganizationPage() {
     setOrg(prev => prev ? { ...prev, logo_url: null } as any : prev)
     setForm(prev => ({ ...prev, logo_url: '' }))
     setLogoPreview(null); setLogoFile(null); setShowLogoModal(false)
-    setFeedback({ type: 'success', msg: 'Logo dihapus.' })
+    setFeedback({ type: 'success', msg: 'Logo removed.' })
     setUploadingLogo(false)
     setTimeout(() => setFeedback(null), 3000)
   }
@@ -162,7 +162,7 @@ export default function OrganizationPage() {
   function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { setFeedback({ type: 'error', msg: 'Ukuran file maksimal 2MB.' }); return }
+    if (file.size > 2 * 1024 * 1024) { setFeedback({ type: 'error', msg: 'Maximum file size is 2MB.' }); return }
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
   }
@@ -189,7 +189,7 @@ export default function OrganizationPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-800">Organization Profile</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Kelola profil dan lingkup audit ISO 27001 organisasi kamu</p>
+            <p className="text-sm text-slate-500 mt-0.5">Manage your organization's profile and ISO 27001 audit scope</p>
           </div>
           {!editing ? (
             <button onClick={() => setEditing(true)}
@@ -201,13 +201,13 @@ export default function OrganizationPage() {
               {org && (
                 <button onClick={() => { setEditing(false); setForm(org) }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium transition-all">
-                  <X className="w-4 h-4" /> Batal
+                  <X className="w-4 h-4" /> Cancel
                 </button>
               )}
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 disabled:opacity-50">
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? 'Menyimpan...' : org ? 'Simpan Perubahan' : 'Buat Organisasi'}
+                {saving ? 'Saving...' : org ? 'Save Changes' : 'Create Organization'}
               </button>
             </div>
           )}
@@ -228,11 +228,11 @@ export default function OrganizationPage() {
         {!org && !editing && (
           <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
             <Building2 className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">Belum Ada Organisasi</h3>
-            <p className="text-slate-500 text-sm mb-6">Buat profil organisasi untuk memulai proses audit ISO 27001.</p>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Organization Yet</h3>
+            <p className="text-slate-500 text-sm mb-6">Create an organization profile to start the ISO 27001 audit process.</p>
             <button onClick={() => setEditing(true)}
               className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all">
-              Buat Organisasi
+              Create Organization
             </button>
           </div>
         )}
