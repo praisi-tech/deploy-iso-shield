@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Shield, Lock, Mail, User, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -115,6 +115,20 @@ const CSS = `
   }
   .rg-card-sub {
     font-size: 0.85rem; color: rgba(148,163,184,0.55); margin-bottom: 1.5rem;
+  }
+  .rg-invite-banner {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1.25rem;
+    background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3);
+  }
+  .rg-invite-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: #a78bfa;
+    box-shadow: 0 0 6px #a78bfa;
+  }
+  .rg-invite-text { font-size: 0.82rem; color: #c4b5fd; }
+  .rg-invite-role {
+    font-weight: 600; color: #a78bfa;
   }
   .rg-alert {
     display: flex; align-items: flex-start; gap: 0.75rem;
@@ -343,8 +357,25 @@ const strengthMeta = [
   { label: 'Strong', color: '#22c55e' },
 ]
 
-export default function RegisterPage() {
+type InviteRole = 'auditor' | 'auditee'
+
+const roleLabels: Record<InviteRole, string> = {
+  auditor: 'Auditor',
+  auditee: 'Auditee',
+}
+
+function RegisterContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Read invite params from URL — set by the invite link generator
+  const inviteOrg = searchParams.get('org')
+  const inviteRoleRaw = searchParams.get('role')
+  const inviteRole: InviteRole | null =
+    inviteRoleRaw === 'auditor' || inviteRoleRaw === 'auditee' ? inviteRoleRaw : null
+
+  const isInvited = Boolean(inviteOrg && inviteRole)
+
   const [form, setForm] = useState({ full_name: '', email: '', password: '', confirm: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -373,17 +404,46 @@ export default function RegisterPage() {
     }
     setLoading(true)
     setError(null)
+
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+
+    // 1. Sign up the user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: { data: { full_name: form.full_name } },
     })
-    if (error) {
-      setError(error.message)
+
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
       return
     }
+
+    // 2. If invited, update the profile with org + role
+    //    The profile row is created by a Supabase trigger on auth.users insert.
+    //    We do a short retry loop in case the trigger hasn't fired yet.
+    if (isInvited && signUpData.user) {
+      const userId = signUpData.user.id
+      let updated = false
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await new Promise(r => setTimeout(r, 600))
+
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ organization_id: inviteOrg, role: inviteRole as 'auditor' | 'auditee' })
+          .eq('id', userId)
+
+        if (!updateError) { updated = true; break }
+      }
+
+      if (!updated) {
+        // Non-fatal — user is created, org/role can be set by admin later
+        console.warn('Could not auto-assign org/role. Admin can set it manually.')
+      }
+    }
+
     setSuccess(true)
     setTimeout(() => { router.push('/dashboard'); router.refresh() }, 1500)
   }
@@ -419,7 +479,22 @@ export default function RegisterPage() {
             <div className="rg-corner-br" />
 
             <div className="rg-card-title">Create your account</div>
-            <div className="rg-card-sub">Start your ISO 27001 audit journey</div>
+            <div className="rg-card-sub">
+              {isInvited
+                ? "You've been invited — complete your registration below."
+                : 'Start your ISO 27001 audit journey'}
+            </div>
+
+            {/* Invite banner */}
+            {isInvited && inviteRole && (
+              <div className="rg-invite-banner">
+                <div className="rg-invite-dot" />
+                <span className="rg-invite-text">
+                  You'll join this organization as{' '}
+                  <span className="rg-invite-role">{roleLabels[inviteRole]}</span>
+                </span>
+              </div>
+            )}
 
             {success && (
               <div className="rg-alert rg-alert-success">
@@ -528,5 +603,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#04060f' }} />}>
+      <RegisterContent />
+    </Suspense>
   )
 }

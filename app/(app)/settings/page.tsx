@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PageHeader from '@/components/ui/PageHeader'
-import { Users, Shield, UserCheck, Mail, Calendar, Edit2, Trash2, UserPlus, X, Check } from 'lucide-react'
+import { Users, Shield, UserCheck, Mail, Calendar, Edit2, Trash2, UserPlus, X, Check, Copy, Link } from 'lucide-react'
 
 type UserRole = 'admin' | 'auditor' | 'auditee'
 
@@ -34,6 +34,22 @@ function getInitials(name: string | null, email: string) {
   return email[0].toUpperCase()
 }
 
+/**
+ * Generates an invite link encoding the organization_id and role as query params.
+ * The register page should read these params and pre-fill / auto-assign them.
+ *
+ * Example result:
+ *   https://yourapp.com/auth/register?org=abc123&role=auditor
+ */
+function buildInviteLink(organizationId: string, role: UserRole): string {
+  const base =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/auth/register`
+      : '/auth/register'
+  const params = new URLSearchParams({ org: organizationId, role })
+  return `${base}?${params.toString()}`
+}
+
 export default function UserManagementPage() {
   const supabase = createClient()
   const [currentUser, setCurrentUser] = useState<Profile | null>(null)
@@ -41,11 +57,11 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingRole, setEditingRole] = useState<UserRole>('auditee')
-  const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<UserRole>('auditee')
   const [showInvite, setShowInvite] = useState(false)
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -113,6 +129,20 @@ export default function UserManagementPage() {
     setFeedback({ type, message })
     setTimeout(() => setFeedback(null), 3500)
   }
+
+  function handleCopyLink() {
+    if (!currentUser?.organization_id) return
+    const link = buildInviteLink(currentUser.organization_id, inviteRole)
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const inviteLink =
+    currentUser?.organization_id
+      ? buildInviteLink(currentUser.organization_id, inviteRole)
+      : ''
 
   const isAdmin = currentUser?.role === 'admin'
 
@@ -189,37 +219,74 @@ export default function UserManagementPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             <p className="text-sm text-slate-500 mb-4">
-              Copy the invite link and send it manually to the user you want to join, or use the email invite feature if configured in Supabase.
+              Select a role, then copy the invite link and send it to the person you want to join your organization.
             </p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Email</label>
-                <input
-                  type="email"
-                  placeholder="user@example.com"
-                  value={inviteEmail}
-                  onChange={e => setInviteEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-brand-500"
-                />
+
+            {/* Role selector */}
+            <div className="mb-4">
+              <label className="text-xs text-slate-500 mb-1 block font-medium uppercase tracking-wider">
+                Invite as
+              </label>
+              <div className="flex gap-2">
+                {(['auditor', 'auditee'] as UserRole[]).map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setInviteRole(r)}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                      inviteRole === r
+                        ? r === 'auditor'
+                          ? 'bg-purple-100 border-purple-400 text-purple-700'
+                          : 'bg-slate-200 border-slate-400 text-slate-700'
+                        : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    {roleBadge[r].label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">Role</label>
-                <select
-                  value={inviteRole}
-                  onChange={e => setInviteRole(e.target.value as UserRole)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-brand-500"
-                >
-                  {roleOptions.map(r => (
-                    <option key={r} value={r}>{roleBadge[r].label}</option>
-                  ))}
-                </select>
+              <p className="text-xs text-slate-400 mt-1.5">
+                {inviteRole === 'auditor'
+                  ? 'Auditor: can create findings, audit reports, and ISO checklists.'
+                  : 'Auditee: read-only access, can upload evidence and view dashboard.'}
+              </p>
+            </div>
+
+            {/* Generated invite link */}
+            <div className="mb-4">
+              <label className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider flex items-center gap-1">
+                <Link className="w-3 h-3" />
+                Invite Link
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-xs font-mono truncate select-all">
+                  {inviteLink || 'No organization linked to your account.'}
+                </div>
+                {inviteLink && (
+                  <button
+                    onClick={handleCopyLink}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${
+                      copied
+                        ? 'bg-green-100 border-green-300 text-green-700'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-brand-400 hover:text-brand-600'
+                    }`}
+                  >
+                    {copied ? (
+                      <><Check className="w-3.5 h-3.5" /> Copied!</>
+                    ) : (
+                      <><Copy className="w-3.5 h-3.5" /> Copy</>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
-            <p className="text-xs text-slate-500 mt-3 bg-slate-50 rounded-lg p-3 border border-slate-200">
-              💡 Users must sign up themselves on the signup page, then an admin can update their role after they join the same organization.
+
+            <p className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3 border border-slate-200">
+              💡 When the user opens this link, they'll be taken to the register page with the role and organization pre-assigned. The role will be automatically set upon sign-up.
             </p>
-            <div className="flex justify-end gap-2 mt-4">
+
+            <div className="flex justify-end mt-4">
               <button
                 onClick={() => setShowInvite(false)}
                 className="px-4 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-700 transition-colors"
