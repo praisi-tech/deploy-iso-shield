@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import CIASlider from '@/components/ui/CIASlider'
 import PageHeader from '@/components/ui/PageHeader'
 
-// Definisi type asset yang valid sesuai skema database
+// Asset type definitions matching the database schema
 type AssetType = 'hardware' | 'software' | 'data' | 'service' | 'personnel' | 'facility'
 
 const assetTypes: { value: AssetType; label: string; desc: string }[] = [
@@ -68,11 +68,13 @@ export default function EditAssetPage() {
   async function loadAsset() {
     const supabase = createClient()
     const { data, error } = await supabase.from('assets').select('*').eq('id', id).single()
+    
     if (error || !data) {
-      setError('Asset tidak ditemukan.')
+      setError('Asset not found.')
       setLoading(false)
       return
     }
+
     setForm({
       name: data.name || '',
       description: data.description || '',
@@ -97,7 +99,6 @@ export default function EditAssetPage() {
 
     const supabase = createClient()
 
-    // Karena interface FormState sudah sinkron dengan database, kita bisa langsung kirim form
     const { error: err } = await supabase
       .from('assets')
       .update({
@@ -140,7 +141,7 @@ export default function EditAssetPage() {
       .eq('id', id)
 
     if (err) {
-      setError('Gagal menghapus asset: ' + err.message)
+      setError('Failed to delete asset: ' + err.message)
       setDeleting(false)
       return
     }
@@ -148,7 +149,7 @@ export default function EditAssetPage() {
     router.push('/assets')
   }
 
-  // Preview criticality
+  // Criticality calculations
   const scoreNum = (form.confidentiality * 0.4 + form.integrity * 0.35 + form.availability * 0.25)
   const score = scoreNum.toFixed(2)
   const criticality = scoreNum >= 4 ? 'Critical' : scoreNum >= 3 ? 'High' : scoreNum >= 2 ? 'Medium' : 'Low'
@@ -164,7 +165,7 @@ export default function EditAssetPage() {
       <div className="p-8 max-w-3xl mx-auto">
         <div className="glass rounded-xl p-16 text-center border border-white/5 bg-white/5">
           <RefreshCw className="w-8 h-8 text-slate-700 animate-spin mx-auto mb-4" />
-          <p className="text-slate-500 text-sm animate-pulse">Memuat data asset...</p>
+          <p className="text-slate-500 text-sm animate-pulse">Loading asset data...</p>
         </div>
       </div>
     )
@@ -174,13 +175,13 @@ export default function EditAssetPage() {
     <div className="p-8 max-w-3xl mx-auto">
       <PageHeader
         title="Edit Asset"
-        subtitle="Perbarui informasi dan penilaian risiko asset"
+        subtitle="Update asset information and risk assessment"
         actions={
           <Link
             href={`/assets/${id}`}
             className="flex items-center gap-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali
+            <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         }
       />
@@ -196,11 +197,11 @@ export default function EditAssetPage() {
       {success && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
           <Save className="w-5 h-5 text-green-400 flex-shrink-0" />
-          <p className="text-green-400 text-sm">Asset berhasil diperbarui! Mengalihkan...</p>
+          <p className="text-green-400 text-sm">Asset updated successfully! Redirecting...</p>
         </div>
       )}
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="rounded-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4 shadow-2xl" style={{ background: '#0d1424' }}>
@@ -208,10 +209,10 @@ export default function EditAssetPage() {
               <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
-              <h3 className="font-semibold text-slate-200">Hapus Asset?</h3>
+              <h3 className="font-semibold text-slate-200">Delete Asset?</h3>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Asset <span className="text-slate-200 font-medium">"{form.name}"</span> akan dihapus dari inventaris. Tindakan ini tidak dapat dibatalkan.
+              Asset <span className="text-slate-200 font-medium">"{form.name}"</span> will be removed from the inventory. This action cannot be undone.
             </p>
             <div className="flex gap-2 pt-1">
               <button
@@ -219,7 +220,7 @@ export default function EditAssetPage() {
                 disabled={deleting}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-sm font-medium transition-all disabled:opacity-50"
               >
-                Batal
+                Cancel
               </button>
               <button
                 onClick={handleDelete}
@@ -227,7 +228,7 @@ export default function EditAssetPage() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-all disabled:opacity-60"
               >
                 {deleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+                {deleting ? 'Deleting...' : 'Yes, Delete'}
               </button>
             </div>
           </div>
@@ -237,10 +238,10 @@ export default function EditAssetPage() {
       <form onSubmit={handleSubmit} className="space-y-6 mt-6">
         {/* Basic Info */}
         <div className="glass rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-slate-300 mb-5">Informasi Asset</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-5">Asset Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="label-dark block mb-1.5">Nama Asset *</label>
+              <label className="label-dark block mb-1.5">Asset Name *</label>
               <input
                 type="text"
                 value={form.name}
@@ -251,12 +252,12 @@ export default function EditAssetPage() {
               />
             </div>
             <div className="col-span-2">
-              <label className="label-dark block mb-1.5">Deskripsi</label>
+              <label className="label-dark block mb-1.5">Description</label>
               <textarea
                 value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 className="input-dark w-full h-20 resize-none"
-                placeholder="Deskripsi singkat asset..."
+                placeholder="Brief description of the asset..."
               />
             </div>
           </div>
@@ -264,7 +265,7 @@ export default function EditAssetPage() {
 
         {/* Asset Type */}
         <div className="glass rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">Tipe Asset *</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-4">Asset Type *</h3>
           <div className="grid grid-cols-3 gap-2">
             {assetTypes.map(({ value, label, desc }) => (
               <button
@@ -286,10 +287,10 @@ export default function EditAssetPage() {
 
         {/* Details */}
         <div className="glass rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-slate-300 mb-5">Detail Asset</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-5">Asset Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label-dark block mb-1.5">Owner / Penanggung Jawab</label>
+              <label className="label-dark block mb-1.5">Owner / Custodian</label>
               <input
                 type="text"
                 value={form.owner}
@@ -299,13 +300,13 @@ export default function EditAssetPage() {
               />
             </div>
             <div>
-              <label className="label-dark block mb-1.5">Lokasi</label>
+              <label className="label-dark block mb-1.5">Location</label>
               <input
                 type="text"
                 value={form.location}
                 onChange={e => setForm({ ...form, location: e.target.value })}
                 className="input-dark w-full"
-                placeholder="Data Center A / Cloud AWS"
+                placeholder="Data Center A / AWS Cloud"
               />
             </div>
             <div>
@@ -319,7 +320,7 @@ export default function EditAssetPage() {
               />
             </div>
             <div>
-              <label className="label-dark block mb-1.5">Versi</label>
+              <label className="label-dark block mb-1.5">Version</label>
               <input
                 type="text"
                 value={form.version}
@@ -350,32 +351,32 @@ export default function EditAssetPage() {
               <p className={`text-lg font-bold ${critColor}`}>{score} — {criticality}</p>
             </div>
           </div>
-          <p className="text-xs text-slate-600 mb-6">Nilai kepentingan setiap atribut keamanan untuk asset ini.</p>
+          <p className="text-xs text-slate-600 mb-6">Importance level of each security attribute for this asset.</p>
           <div className="space-y-6">
             <CIASlider
               label="Confidentiality (C)"
               name="confidentiality"
               value={form.confidentiality}
               onChange={v => setForm({ ...form, confidentiality: v })}
-              description="Seberapa sensitif data asset ini? Apa dampak jika terjadi akses tidak sah?"
+              description="How sensitive is the data? Impact of unauthorized disclosure?"
             />
             <CIASlider
               label="Integrity (I)"
               name="integrity"
               value={form.integrity}
               onChange={v => setForm({ ...form, integrity: v })}
-              description="Seberapa kritis akurasi data? Apa dampak jika data dimodifikasi atau rusak?"
+              description="How critical is data accuracy? Impact of unauthorized modification?"
             />
             <CIASlider
               label="Availability (A)"
               name="availability"
               value={form.availability}
               onChange={v => setForm({ ...form, availability: v })}
-              description="Seberapa kritis uptime? Apa dampak jika asset tidak tersedia?"
+              description="How critical is uptime? Impact of asset being unavailable?"
             />
           </div>
           <div className="mt-5 p-4 rounded-lg bg-slate-900/60 border border-slate-800">
-            <p className="text-xs text-slate-500 font-medium mb-2">Formula Score</p>
+            <p className="text-xs text-slate-500 font-medium mb-2">Score Formula</p>
             <p className="text-xs text-slate-600 font-mono">
               ({form.confidentiality} × 0.4) + ({form.integrity} × 0.35) + ({form.availability} × 0.25) = <span className={`font-bold ${critColor}`}>{score}</span>
             </p>
@@ -384,12 +385,12 @@ export default function EditAssetPage() {
 
         {/* Notes */}
         <div className="glass rounded-xl p-6">
-          <label className="label-dark block mb-1.5">Catatan Tambahan</label>
+          <label className="label-dark block mb-1.5">Additional Notes</label>
           <textarea
             value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
             className="input-dark w-full h-24 resize-none"
-            placeholder="Catatan, dependensi, atau konteks tambahan..."
+            placeholder="Dependencies, context, or additional notes..."
           />
         </div>
 
@@ -401,7 +402,7 @@ export default function EditAssetPage() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-all"
           >
             <Trash2 className="w-4 h-4" />
-            Hapus Asset
+            Delete Asset
           </button>
 
           <div className="flex gap-3">
@@ -409,7 +410,7 @@ export default function EditAssetPage() {
               href={`/assets/${id}`}
               className="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
             >
-              Batal
+              Cancel
             </Link>
             <button
               type="submit"
@@ -417,7 +418,7 @@ export default function EditAssetPage() {
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all disabled:opacity-50"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
