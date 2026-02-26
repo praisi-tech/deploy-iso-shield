@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  Save, 
+  AlertCircle, 
+  Trash2, 
+  RefreshCw,
+  Server,      // Hardware
+  HardDrive,   // Software
+  Database,    // Data
+  Globe,       // Service
+  Users,       // Personnel
+  Building2    // Facility
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import CIASlider from '@/components/ui/CIASlider'
 import PageHeader from '@/components/ui/PageHeader'
@@ -11,13 +23,13 @@ import PageHeader from '@/components/ui/PageHeader'
 // Asset type definitions matching the database schema
 type AssetType = 'hardware' | 'software' | 'data' | 'service' | 'personnel' | 'facility'
 
-const assetTypes: { value: AssetType; label: string; desc: string }[] = [
-  { value: 'hardware', label: '🖥️ Hardware', desc: 'Physical devices, servers' },
-  { value: 'software', label: '💿 Software', desc: 'Apps, OS, firmware' },
-  { value: 'data', label: '📁 Data', desc: 'Databases, documents' },
-  { value: 'service', label: '⚡ Service', desc: 'Cloud, APIs, utilities' },
-  { value: 'personnel', label: '👤 Personnel', desc: 'Key staff and access' },
-  { value: 'facility', label: '🏢 Facility', desc: 'Physical locations' },
+const assetTypes: { value: AssetType; label: string; desc: string; icon: React.ElementType }[] = [
+  { value: 'hardware', label: 'Hardware', desc: 'Physical devices, servers', icon: Server },
+  { value: 'software', label: 'Software', desc: 'Apps, OS, firmware', icon: HardDrive },
+  { value: 'data', label: 'Data', desc: 'Databases, documents', icon: Database },
+  { value: 'service', label: 'Service', desc: 'Cloud, APIs, utilities', icon: Globe },
+  { value: 'personnel', label: 'Personnel', desc: 'Key staff and access', icon: Users },
+  { value: 'facility', label: 'Facility', desc: 'Physical locations', icon: Building2 },
 ]
 
 interface FormState {
@@ -267,19 +279,26 @@ export default function EditAssetPage() {
         <div className="glass rounded-xl p-5 md:p-6">
           <h3 className="text-sm font-semibold text-slate-300 mb-4">Asset Type *</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-            {assetTypes.map(({ value, label, desc }) => (
+            {assetTypes.map(({ value, label, desc, icon: Icon }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setForm({ ...form, type: value })}
-                className={`p-3 rounded-xl text-left border transition-all ${
+                className={`p-3 rounded-xl text-left border transition-all flex items-start gap-3 ${
                   form.type === value
                     ? 'bg-brand-500/15 border-brand-500/40 ring-1 ring-brand-500/40'
                     : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
                 }`}
               >
-                <p className="text-sm mb-0.5">{label}</p>
-                <p className="text-[11px] text-slate-600 leading-tight">{desc}</p>
+                <div className={`mt-0.5 p-1.5 rounded-lg ${
+                  form.type === value ? 'text-brand-400 bg-brand-400/10' : 'text-slate-500 bg-slate-800/50'
+                }`}>
+                  <Icon size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-0.5">{label}</p>
+                  <p className="text-[11px] text-slate-600 leading-tight">{desc}</p>
+                </div>
               </button>
             ))}
           </div>
@@ -340,7 +359,6 @@ export default function EditAssetPage() {
 
         {/* CIA Triad Rating */}
         <div className="glass rounded-xl p-5 md:p-6">
-          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h3 className="text-sm font-semibold text-slate-300">CIA Triad Rating</h3>
@@ -348,7 +366,10 @@ export default function EditAssetPage() {
             </div>
             <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-right min-w-[140px]">
               <p className="text-[10px] text-slate-600 uppercase tracking-wider">Criticality</p>
-              <p className={`text-lg font-bold leading-tight ${critColor}`}>{score} — {criticality}</p>
+              <p className={`text-lg font-bold leading-tight flex items-center justify-end gap-2 ${critColor}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                {score} — {criticality}
+              </p>
             </div>
           </div>
           
@@ -409,7 +430,7 @@ export default function EditAssetPage() {
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link
               href={`/assets/${id}`}
-              className="text-center px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
+              className="flex items-center justify-center px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
             >
               Cancel
             </Link>

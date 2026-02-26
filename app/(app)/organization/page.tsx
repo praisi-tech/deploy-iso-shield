@@ -5,31 +5,34 @@ import {
   Building2, Globe, Users, Mail, Phone, MapPin,
   Server, Shield, AlertCircle, CheckCircle2, Edit3, Save,
   X, Calendar, Wifi, WifiOff,
-  Lock, RefreshCw, BadgeCheck, TrendingUp, Camera, Upload, Trash2
+  Lock, RefreshCw, BadgeCheck, TrendingUp, Camera, Upload, Trash2,
+  Landmark, HeartPulse, GraduationCap, ShoppingCart, Factory, Cpu,
+  Radio, Wrench, Monitor, Smartphone, Cloud, HardDrive, GitMerge,
+  Zap, BanknoteIcon
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Organization } from '@/types/models'
 
 const sectors = [
-  { value: 'financial', label: '🏦 Financial Services' },
-  { value: 'healthcare', label: '🏥 Healthcare' },
-  { value: 'government', label: '🏛️ Government' },
-  { value: 'education', label: '🎓 Education' },
-  { value: 'retail', label: '🛒 Retail & E-commerce' },
-  { value: 'manufacturing', label: '🏭 Manufacturing' },
-  { value: 'technology', label: '💻 Technology' },
-  { value: 'telecommunications', label: '📡 Telecommunications' },
-  { value: 'other', label: '🔧 Other' },
+  { value: 'financial', label: 'Financial Services', icon: Landmark },
+  { value: 'healthcare', label: 'Healthcare', icon: HeartPulse },
+  { value: 'government', label: 'Government', icon: Building2 },
+  { value: 'education', label: 'Education', icon: GraduationCap },
+  { value: 'retail', label: 'Retail & E-commerce', icon: ShoppingCart },
+  { value: 'manufacturing', label: 'Manufacturing', icon: Factory },
+  { value: 'technology', label: 'Technology', icon: Cpu },
+  { value: 'telecommunications', label: 'Telecommunications', icon: Radio },
+  { value: 'other', label: 'Other', icon: Wrench },
 ]
 
 const systemTypeOptions = [
-  { id: 'web', label: 'Web Application', icon: '🌐' },
-  { id: 'mobile', label: 'Mobile App', icon: '📱' },
-  { id: 'cloud', label: 'Cloud Services', icon: '☁️' },
-  { id: 'on_premise', label: 'On-Premise', icon: '🖥️' },
-  { id: 'hybrid', label: 'Hybrid', icon: '🔄' },
-  { id: 'iot', label: 'IoT/OT Systems', icon: '📡' },
-  { id: 'api', label: 'APIs/Microservices', icon: '⚡' },
+  { id: 'web', label: 'Web App', icon: Globe },
+  { id: 'mobile', label: 'Mobile App', icon: Smartphone },
+  { id: 'cloud', label: 'Cloud', icon: Cloud },
+  { id: 'on_premise', label: 'On-Premise', icon: HardDrive },
+  { id: 'hybrid', label: 'Hybrid', icon: GitMerge },
+  { id: 'iot', label: 'IoT / OT', icon: Radio },
+  { id: 'api', label: 'API / Services', icon: Zap },
 ]
 
 const exposureLevels = [
@@ -300,7 +303,6 @@ export default function OrganizationPage() {
                     className="w-20 h-20 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-indigo-100 group-hover:border-indigo-300 transition-colors" />
                 ) : (
                   <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 border-2 border-indigo-100 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-                    {/* FIX 1: was "sm:w-8 h-8" → now "sm:w-8 sm:h-8" */}
                     <Building2 className="w-10 h-10 sm:w-8 sm:h-8 text-indigo-400" />
                   </div>
                 )}
@@ -312,9 +314,12 @@ export default function OrganizationPage() {
                 <h2 className="text-2xl font-bold text-slate-800">{org.name}</h2>
                 <p className="text-slate-500 text-sm mt-1">{org.description || 'No description provided'}</p>
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mt-3">
-                  <span className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
-                    {currentSector?.label || org.sector}
-                  </span>
+                  {currentSector && (
+                    <span className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
+                      <currentSector.icon className="w-3 h-3" />
+                      {currentSector.label}
+                    </span>
+                  )}
                   {org.employee_count && (
                     <span className="flex items-center gap-1.5 text-xs bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-full">
                       <Users className="w-3 h-3" /> {org.employee_count.toLocaleString()} employees
@@ -365,7 +370,7 @@ export default function OrganizationPage() {
                         const opt = systemTypeOptions.find(o => o.id === t)
                         return opt ? (
                           <span key={t} className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1.5 rounded-lg font-medium">
-                            <span>{opt.icon}</span> {opt.label}
+                            <opt.icon className="w-3 h-3" /> {opt.label}
                           </span>
                         ) : null
                       })}
@@ -458,13 +463,13 @@ export default function OrganizationPage() {
                 <div>
                   <label className="text-sm font-semibold text-slate-700 mb-3 block">System Types (Select all that apply)</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                    {systemTypeOptions.map(({ id, label, icon }) => {
+                    {systemTypeOptions.map(({ id, label, icon: ItemIcon }) => {
                       const selected = (form.system_types || []).includes(id)
                       return (
                         <button key={id} type="button" onClick={() => toggleSystemType(id)}
                           className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all text-center
                             ${selected ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}>
-                          <span className="text-xl">{icon}</span>
+                          <ItemIcon className="w-5 h-5" />
                           <span className="text-[10px] font-bold leading-tight uppercase">{label}</span>
                         </button>
                       )
