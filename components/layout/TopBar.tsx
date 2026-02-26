@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Users, LogOut, ChevronDown, X, User, Sparkles } from 'lucide-react'
+import { Users, LogOut, ChevronDown, X, User, MessageSquareText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 function getInitials(name: string) {
@@ -97,19 +97,26 @@ export default function TopBar({ profile }: TopBarProps) {
       <header className="h-16 flex items-center justify-end px-3 sm:px-6 gap-2 sm:gap-4 flex-shrink-0 border-b border-white/5 relative z-50"
         style={{ background: 'linear-gradient(90deg, #1a1f38 0%, #151929 100%)' }}>
 
+        {/* --- Updated Ask AI Button --- */}
         <Link
           href="/ai-assistant"
-          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-medium
-          bg-emerald-500/15 text-emerald-300 border border-emerald-400/30
-          hover:bg-emerald-500/25 transition-all shadow-sm group whitespace-nowrap"
+          className="group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+          bg-white/5 hover:bg-white/10 text-white border border-white/10
+          transition-all duration-300 shadow-lg hover:shadow-indigo-500/10"
         >
-          {/* FIX 1: was "sm:w-4 sm:h-4" → now "sm:w-4 sm:h-4" */}
-          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span>AI Assistant</span>
-          <span className="text-[8px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-[1px] sm:py-[2px] rounded-md bg-emerald-400/20 border border-emerald-400/30 group-hover:bg-emerald-400/30 transition-colors">
-            NEW
+          <div className="relative">
+             <MessageSquareText className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+             {/* Pulsing "Online" dot indicator */}
+             <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+             </span>
+          </div>
+          <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            Ask AI
           </span>
         </Link>
+        {/* ---------------------------- */}
 
         {profile && (
           <div className="relative">
@@ -135,7 +142,6 @@ export default function TopBar({ profile }: TopBarProps) {
                   {profile.role.toUpperCase()}
                 </span>
               </div>
-              {/* FIX 2: was "sm:w-4 sm:h-4" → now "sm:w-4 sm:h-4" */}
               <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
