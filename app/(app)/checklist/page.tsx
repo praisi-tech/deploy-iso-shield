@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ClipboardList, ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertCircle, MinusCircle, FileText, Search, Filter, RefreshCw, X, Save } from 'lucide-react'
+import { ClipboardList, ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertCircle, MinusCircle, FileText, Search, RefreshCw, X, Save } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { upsertControlAssessment } from '@/lib/actions/checklist'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -9,11 +9,29 @@ import PageHeader from '@/components/ui/PageHeader'
 import type { DomainWithControls, control_status } from '@/types/phase2'
 
 const statusOptions: { value: control_status; label: string; icon: any; color: string }[] = [
-  { value: 'compliant', label: 'Compliant', icon: CheckCircle2, color: 'text-emerald-400 hover:bg-emerald-500/10' },
-  { value: 'partial', label: 'Partial', icon: AlertCircle, color: 'text-yellow-400 hover:bg-yellow-500/10' },
-  { value: 'non_compliant', label: 'Non-Compliant', icon: XCircle, color: 'text-red-400 hover:bg-red-500/10' },
-  { value: 'not_applicable', label: 'N/A', icon: MinusCircle, color: 'text-slate-500 hover:bg-slate-500/10' },
+  { value: 'compliant',       label: 'Compliant',     icon: CheckCircle2, color: 'text-emerald-600 hover:bg-emerald-50' },
+  { value: 'partial',         label: 'Partial',       icon: AlertCircle,  color: 'text-yellow-600 hover:bg-yellow-50'  },
+  { value: 'non_compliant',   label: 'Non-Compliant', icon: XCircle,      color: 'text-red-600 hover:bg-red-50'        },
+  { value: 'not_applicable',  label: 'N/A',           icon: MinusCircle,  color: 'text-slate-400 hover:bg-slate-100'   },
 ]
+
+const filterOptions = [
+  { value: 'all',             label: 'All'           },
+  { value: 'unassessed',      label: 'Unassessed'    },
+  { value: 'compliant',       label: 'Compliant'     },
+  { value: 'partial',         label: 'Partial'       },
+  { value: 'non_compliant',   label: 'Non-Compliant' },
+  { value: 'not_applicable',  label: 'N/A'           },
+]
+
+const filterActiveColors: Record<string, string> = {
+  all:             'bg-brand-600 border-brand-600 text-white',
+  unassessed:      'bg-slate-600 border-slate-600 text-white',
+  compliant:       'bg-emerald-600 border-emerald-600 text-white',
+  partial:         'bg-yellow-500 border-yellow-500 text-white',
+  non_compliant:   'bg-red-600 border-red-600 text-white',
+  not_applicable:  'bg-slate-400 border-slate-400 text-white',
+}
 
 interface EditDrawerProps {
   control: any
@@ -47,38 +65,39 @@ function EditDrawer({ control, orgId, onClose, onSaved }: EditDrawerProps) {
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-[480px] bg-[#0d1424] border-l border-slate-800 h-full overflow-y-auto flex flex-col animate-slide-in">
+      {/* Drawer — full width on mobile, fixed width on sm+ */}
+      <div className="w-full sm:w-[480px] bg-white border-l border-slate-200 h-full overflow-y-auto flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex-shrink-0">
+        <div className="p-5 md:p-6 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="text-xs font-mono text-brand-400 bg-brand-500/10 border border-brand-500/20 px-2 py-0.5 rounded">
+              <span className="text-xs font-mono text-brand-600 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
                 {control.control_id}
               </span>
-              <h3 className="text-base font-semibold text-white mt-2 leading-snug">{control.name}</h3>
+              <h3 className="text-base font-semibold text-slate-800 mt-2 leading-snug">{control.name}</h3>
             </div>
-            <button onClick={onClose} className="text-slate-600 hover:text-slate-400 transition-colors mt-1">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors mt-1">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-6 flex-1">
+        <div className="p-5 md:p-6 space-y-6 flex-1">
           {/* Description */}
           {control.description && (
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Control Objective</p>
-              <p className="text-sm text-slate-400 leading-relaxed">{control.description}</p>
+              <p className="text-sm text-slate-600 leading-relaxed">{control.description}</p>
             </div>
           )}
 
           {/* Guidance */}
           {control.guidance && (
-            <div className="p-4 rounded-xl bg-brand-500/5 border border-brand-500/15">
-              <p className="text-xs font-semibold text-brand-400 mb-2 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-brand-50 border border-brand-100">
+              <p className="text-xs font-semibold text-brand-600 mb-2 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5" /> Implementation Guidance
               </p>
-              <p className="text-xs text-slate-400 leading-relaxed">{control.guidance}</p>
+              <p className="text-xs text-slate-600 leading-relaxed">{control.guidance}</p>
             </div>
           )}
 
@@ -86,23 +105,21 @@ function EditDrawer({ control, orgId, onClose, onSaved }: EditDrawerProps) {
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Compliance Status</p>
             <div className="grid grid-cols-2 gap-2">
-              {statusOptions.map(({ value, label, icon: Icon, color }) => (
+              {statusOptions.map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
                   onClick={() => setForm({ ...form, status: value })}
                   className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
                     form.status === value
-                      ? value === 'compliant' ? 'bg-emerald-500/15 border-emerald-500/40'
-                        : value === 'partial' ? 'bg-yellow-500/15 border-yellow-500/40'
-                        : value === 'non_compliant' ? 'bg-red-500/15 border-red-500/40'
-                        : 'bg-slate-700/30 border-slate-600/40'
-                      : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+                      ? value === 'compliant'      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : value === 'partial'        ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
+                      : value === 'non_compliant'  ? 'bg-red-50 border-red-300 text-red-700'
+                      : 'bg-slate-100 border-slate-300 text-slate-600'
+                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-500'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${form.status === value ? color.split(' ')[0] : 'text-slate-600'}`} />
-                  <span className={`text-xs font-medium ${form.status === value ? 'text-slate-200' : 'text-slate-500'}`}>
-                    {label}
-                  </span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs font-medium">{label}</span>
                 </button>
               ))}
             </div>
@@ -130,7 +147,7 @@ function EditDrawer({ control, orgId, onClose, onSaved }: EditDrawerProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label-dark">Responsible Person</label>
               <input
@@ -154,8 +171,11 @@ function EditDrawer({ control, orgId, onClose, onSaved }: EditDrawerProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-800 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm transition-all border border-slate-700">
+        <div className="p-5 md:p-6 border-t border-slate-200 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm transition-all border border-slate-200"
+          >
             Cancel
           </button>
           <button
@@ -163,7 +183,10 @@ function EditDrawer({ control, orgId, onClose, onSaved }: EditDrawerProps) {
             disabled={saving}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all disabled:opacity-50"
           >
-            {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving
+              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <Save className="w-4 h-4" />
+            }
             Save Assessment
           </button>
         </div>
@@ -211,7 +234,6 @@ export default function ChecklistPage() {
     }))
 
     setDomains(processed)
-    // Expand first domain by default
     if (processed.length > 0) setExpandedDomains(new Set([processed[0].id]))
     setLoading(false)
   }, [])
@@ -232,21 +254,19 @@ export default function ChecklistPage() {
     })
   }
 
-  // Overall stats
   const allControls = domains.flatMap(d => d.iso_controls)
   const stats = {
-    total: allControls.length,
-    assessed: allControls.filter(c => c.assessment).length,
-    compliant: allControls.filter(c => c.assessment?.status === 'compliant').length,
-    partial: allControls.filter(c => c.assessment?.status === 'partial').length,
-    nonCompliant: allControls.filter(c => c.assessment?.status === 'non_compliant').length,
-    na: allControls.filter(c => c.assessment?.status === 'not_applicable').length,
+    total:       allControls.length,
+    assessed:    allControls.filter(c => c.assessment).length,
+    compliant:   allControls.filter(c => c.assessment?.status === 'compliant').length,
+    partial:     allControls.filter(c => c.assessment?.status === 'partial').length,
+    nonCompliant:allControls.filter(c => c.assessment?.status === 'non_compliant').length,
+    na:          allControls.filter(c => c.assessment?.status === 'not_applicable').length,
   }
   const effective = stats.total - stats.na
-  const score = effective > 0 ? Math.round(((stats.compliant + stats.partial * 0.5) / effective) * 100) : 0
+  const score    = effective > 0 ? Math.round(((stats.compliant + stats.partial * 0.5) / effective) * 100) : 0
   const coverage = stats.total > 0 ? Math.round((stats.assessed / stats.total) * 100) : 0
 
-  // Filter
   const filteredDomains = domains.map(domain => ({
     ...domain,
     iso_controls: domain.iso_controls.filter(control => {
@@ -262,33 +282,36 @@ export default function ChecklistPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-96">
+      <div className="p-4 md:p-8 flex items-center justify-center min-h-96">
         <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <PageHeader
         title="ISO 27001 Control Checklist"
         subtitle="Annex A — 14 domains across all mandatory and optional controls"
         actions={
-          <button onClick={loadData} className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-500 hover:text-slate-300 transition-all">
+          <button
+            onClick={loadData}
+            className="p-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-600 transition-all"
+          >
             <RefreshCw className="w-4 h-4" />
           </button>
         }
       />
 
-      {/* Progress summary */}
-      <div className="grid grid-cols-6 gap-3 mb-8">
-        <div className="col-span-2 glass rounded-xl p-5 flex items-center gap-5">
-          {/* Arc progress */}
-          <div className="relative w-20 h-20 flex-shrink-0">
-            <svg className="-rotate-90 w-20 h-20">
-              <circle cx="40" cy="40" r="32" fill="none" stroke="#1e2a44" strokeWidth="7" />
+      {/* Progress summary — stacked on mobile */}
+      <div className="flex flex-col sm:grid sm:grid-cols-6 gap-3 mb-6 md:mb-8">
+        {/* Score arc — full width on mobile */}
+        <div className="sm:col-span-2 glass rounded-xl p-4 md:p-5 flex items-center gap-4">
+          <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+            <svg className="-rotate-90 w-16 h-16 md:w-20 md:h-20">
+              <circle cx="50%" cy="50%" r="32%" fill="none" stroke="#e2e8f0" strokeWidth="7" />
               <circle
-                cx="40" cy="40" r="32" fill="none"
+                cx="50%" cy="50%" r="32%" fill="none"
                 stroke={score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444'}
                 strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 32}`}
@@ -297,32 +320,36 @@ export default function ChecklistPage() {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-lg font-bold text-white">{score}%</span>
+              <span className="text-base md:text-lg font-bold text-slate-800">{score}%</span>
             </div>
           </div>
           <div>
-            <p className="text-lg font-bold text-white">{score}% Compliant</p>
-            <p className="text-xs text-slate-500">{coverage}% coverage · {stats.assessed}/{stats.total} assessed</p>
+            <p className="text-base md:text-lg font-bold text-slate-800">{score}% Compliant</p>
+            <p className="text-xs text-slate-500 mt-0.5">{coverage}% coverage</p>
+            <p className="text-xs text-slate-500">{stats.assessed}/{stats.total} assessed</p>
           </div>
         </div>
 
-        {[
-          { label: 'Compliant', value: stats.compliant, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-          { label: 'Partial', value: stats.partial, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-          { label: 'Non-Compliant', value: stats.nonCompliant, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-          { label: 'Not Applicable', value: stats.na, color: 'text-slate-500', bg: 'bg-slate-700/20 border-slate-700/40' },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`glass rounded-xl p-4 text-center border ${bg}`}>
-            <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
-            <p className="text-xs text-slate-600 mt-1 leading-tight">{label}</p>
-          </div>
-        ))}
+        {/* Stat cards — 2 cols on mobile, 4 cols fills rest on sm+ */}
+        <div className="grid grid-cols-2 sm:contents gap-3">
+          {[
+            { label: 'Compliant',      value: stats.compliant,    color: 'text-emerald-600', bg: 'bg-emerald-50',  border: 'border-emerald-200' },
+            { label: 'Partial',        value: stats.partial,      color: 'text-yellow-600',  bg: 'bg-yellow-50',   border: 'border-yellow-200'  },
+            { label: 'Non-Compliant',  value: stats.nonCompliant, color: 'text-red-600',     bg: 'bg-red-50',      border: 'border-red-200'     },
+            { label: 'Not Applicable', value: stats.na,           color: 'text-slate-500',   bg: 'bg-slate-50',    border: 'border-slate-200'   },
+          ].map(({ label, value, color, bg, border }) => (
+            <div key={label} className={`glass rounded-xl p-3 md:p-4 text-center border ${bg} ${border}`}>
+              <p className={`text-xl md:text-2xl font-bold tabular-nums ${color}`}>{value}</p>
+              <p className="text-[11px] md:text-xs text-slate-500 mt-1 leading-tight">{label}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={search}
@@ -331,18 +358,19 @@ export default function ChecklistPage() {
             placeholder="Search controls by name or ID..."
           />
         </div>
-        <div className="flex gap-1.5">
-          {['all', 'unassessed', 'compliant', 'partial', 'non_compliant', 'not_applicable'].map(f => (
+        {/* Filter buttons — wrap on mobile */}
+        <div className="flex flex-wrap gap-1.5">
+          {filterOptions.map(({ value, label }) => (
             <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                statusFilter === f
-                  ? 'bg-brand-600/25 border-brand-500/40 text-brand-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              key={value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                statusFilter === value
+                  ? filterActiveColors[value]
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'unassessed' ? 'Unassessed' : f === 'non_compliant' ? 'Non-Compliant' : f === 'not_applicable' ? 'N/A' : f.charAt(0).toUpperCase() + f.slice(1)}
+              {label}
             </button>
           ))}
         </div>
@@ -353,11 +381,11 @@ export default function ChecklistPage() {
         {filteredDomains.map(domain => {
           const isExpanded = expandedDomains.has(domain.id)
           const domainControls = domain.iso_controls
-          const domainCompliant = domainControls.filter(c => c.assessment?.status === 'compliant').length
-          const domainPartial = domainControls.filter(c => c.assessment?.status === 'partial').length
-          const domainNA = domainControls.filter(c => c.assessment?.status === 'not_applicable').length
-          const domainEffective = domainControls.length - domainNA
-          const domainScore = domainEffective > 0
+          const domainCompliant   = domainControls.filter(c => c.assessment?.status === 'compliant').length
+          const domainPartial     = domainControls.filter(c => c.assessment?.status === 'partial').length
+          const domainNA          = domainControls.filter(c => c.assessment?.status === 'not_applicable').length
+          const domainEffective   = domainControls.length - domainNA
+          const domainScore       = domainEffective > 0
             ? Math.round(((domainCompliant + domainPartial * 0.5) / domainEffective) * 100) : 0
 
           return (
@@ -365,79 +393,83 @@ export default function ChecklistPage() {
               {/* Domain header */}
               <button
                 onClick={() => toggleDomain(domain.id)}
-                className="w-full flex items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors text-left group"
+                className="w-full flex items-center gap-3 md:gap-4 p-4 hover:bg-slate-50 transition-colors text-left group"
               >
-                <div className="w-9 h-9 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-brand-400">{domain.code}</span>
+                <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-brand-50 border border-brand-200 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-brand-600">{domain.code}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-200">{domain.name}</p>
+                    <p className="text-sm font-semibold text-slate-700 truncate">{domain.name}</p>
                     {domainCompliant === domainEffective && domainEffective > 0 && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">{domainControls.length} controls</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{domainControls.length} controls</p>
                 </div>
 
-                {/* Domain mini-bar */}
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center gap-2">
-                    {domainControls.length > 0 && (
-                      <>
-                        <div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
-                          <div className="bg-emerald-500 h-full transition-all" style={{ width: `${(domainCompliant / domainControls.length) * 100}%` }} />
-                          <div className="bg-yellow-500 h-full transition-all" style={{ width: `${(domainPartial / domainControls.length) * 100}%` }} />
-                          <div className="bg-red-500/70 h-full transition-all" style={{ width: `${(domainControls.filter(c => c.assessment?.status === 'non_compliant').length / domainControls.length) * 100}%` }} />
-                        </div>
-                        <span className={`text-xs font-bold w-8 text-right ${domainScore >= 80 ? 'text-emerald-400' : domainScore >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-                          {domainScore}%
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {isExpanded
-                    ? <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                    : <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                  }
+                {/* Domain mini-bar — hidden on small mobile */}
+                <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                  {domainControls.length > 0 && (
+                    <>
+                      <div className="w-24 md:w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
+                        <div className="bg-emerald-500 h-full transition-all" style={{ width: `${(domainCompliant / domainControls.length) * 100}%` }} />
+                        <div className="bg-yellow-400 h-full transition-all" style={{ width: `${(domainPartial / domainControls.length) * 100}%` }} />
+                        <div className="bg-red-400 h-full transition-all" style={{ width: `${(domainControls.filter(c => c.assessment?.status === 'non_compliant').length / domainControls.length) * 100}%` }} />
+                      </div>
+                      <span className={`text-xs font-bold w-8 text-right ${domainScore >= 80 ? 'text-emerald-600' : domainScore >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                        {domainScore}%
+                      </span>
+                    </>
+                  )}
                 </div>
+
+                {isExpanded
+                  ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                }
               </button>
 
               {/* Controls list */}
               {isExpanded && (
-                <div className="border-t border-slate-800/60">
+                <div className="border-t border-slate-100">
                   {domainControls.map((control, idx) => (
                     <div
                       key={control.id}
-                      className={`flex items-center gap-4 px-4 py-3.5 hover:bg-white/[0.015] transition-colors group ${idx !== domainControls.length - 1 ? 'border-b border-slate-800/40' : ''}`}
+                      className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-3 md:py-3.5 hover:bg-slate-50 transition-colors group ${
+                        idx !== domainControls.length - 1 ? 'border-b border-slate-100' : ''
+                      }`}
                     >
-                      {/* Control ID */}
-                      <code className="text-xs text-brand-400/70 w-20 flex-shrink-0 font-mono">{control.control_id}</code>
+                      {/* Control ID — hidden on smallest screens */}
+                      <code className="hidden sm:block text-xs text-brand-500 w-20 flex-shrink-0 font-mono">{control.control_id}</code>
 
                       {/* Name */}
                       <button
                         onClick={() => setEditingControl(control)}
                         className="flex-1 text-left min-w-0"
                       >
-                        <p className="text-sm text-slate-300 hover:text-white transition-colors truncate">
+                        <p className="text-sm text-slate-600 hover:text-slate-800 transition-colors line-clamp-2 sm:truncate">
+                          <span className="sm:hidden text-xs text-brand-500 font-mono mr-1.5">{control.control_id}</span>
                           {control.name}
                           {control.is_mandatory && (
-                            <span className="ml-2 text-[10px] bg-orange-500/10 border border-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded font-medium">Required</span>
+                            <span className="ml-2 text-[10px] bg-orange-50 border border-orange-200 text-orange-600 px-1.5 py-0.5 rounded font-medium whitespace-nowrap">
+                              Required
+                            </span>
                           )}
                         </p>
                         {control.assessment?.notes && (
-                          <p className="text-[11px] text-slate-600 truncate mt-0.5">{control.assessment.notes}</p>
+                          <p className="text-[11px] text-slate-400 truncate mt-0.5">{control.assessment.notes}</p>
                         )}
                       </button>
 
-                      {/* Quick status buttons */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Quick status buttons — hover only, hidden on mobile */}
+                      <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {statusOptions.map(({ value, icon: Icon, color }) => (
                           <button
                             key={value}
                             onClick={() => handleQuickStatus(control, value)}
                             disabled={quickSaving === control.id}
-                            className={`p-1.5 rounded-lg transition-all ${color} ${control.assessment?.status === value ? 'bg-current/10' : ''}`}
+                            className={`p-1.5 rounded-lg transition-all ${color}`}
                             title={value.replace('_', ' ')}
                           >
                             {quickSaving === control.id
@@ -449,18 +481,18 @@ export default function ChecklistPage() {
                       </div>
 
                       {/* Status badge */}
-                      <div className="w-28 flex-shrink-0 flex justify-end">
+                      <div className="flex-shrink-0">
                         {control.assessment ? (
                           <StatusBadge status={control.assessment.status} size="sm" showIcon />
                         ) : (
-                          <span className="text-xs text-slate-700 italic">unassessed</span>
+                          <span className="text-xs text-slate-400 italic">unassessed</span>
                         )}
                       </div>
 
-                      {/* Edit button */}
+                      {/* Edit button — hidden on mobile */}
                       <button
                         onClick={() => setEditingControl(control)}
-                        className="text-xs text-slate-600 hover:text-brand-400 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                        className="hidden md:block text-xs text-slate-400 hover:text-brand-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
                       >
                         Edit →
                       </button>
@@ -474,9 +506,9 @@ export default function ChecklistPage() {
       </div>
 
       {filteredDomains.length === 0 && (
-        <div className="glass rounded-xl p-16 text-center">
-          <ClipboardList className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-          <p className="text-slate-500">No controls match your search/filter.</p>
+        <div className="glass rounded-xl p-12 md:p-16 text-center">
+          <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-400">No controls match your search/filter.</p>
         </div>
       )}
 

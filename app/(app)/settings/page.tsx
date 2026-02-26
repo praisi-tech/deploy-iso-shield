@@ -61,13 +61,11 @@ export default function AdminSettingsPage() {
   const [filterRole, setFilterRole]         = useState<string>('all')
   const [feedback, setFeedback]             = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Inline editing
   const [editingUser, setEditingUser]       = useState<string | null>(null)
   const [editRole, setEditRole]             = useState<UserRole>('auditee')
   const [editOrgId, setEditOrgId]           = useState<string>('')
   const [saving, setSaving]                 = useState(false)
 
-  // Invite link modal
   const [showLinkModal, setShowLinkModal]   = useState(false)
   const [linkOrgId, setLinkOrgId]           = useState<string>('')
   const [linkRole, setLinkRole]             = useState<UserRole>('auditee')
@@ -173,7 +171,7 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="glass rounded-xl p-16 text-center">
           <p className="text-slate-500 text-sm animate-pulse">Loading admin data...</p>
         </div>
@@ -183,7 +181,7 @@ export default function AdminSettingsPage() {
 
   if (currentUser?.role !== 'admin') {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="glass rounded-xl p-16 text-center">
           <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
           <p className="text-slate-600 font-medium">Access Denied</p>
@@ -194,25 +192,30 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <PageHeader
         title="Admin Settings"
         subtitle="Manage all users, organizations, and roles across the platform"
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setShowLinkModal(true); setLinkOrgId(organizations[0]?.id ?? ''); setLinkRole('auditee'); setCopied(false) }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all"
+              onClick={() => {
+                setShowLinkModal(true)
+                setLinkOrgId(organizations[0]?.id ?? '')
+                setLinkRole('auditee')
+                setCopied(false)
+              }}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all"
             >
               <Link className="w-4 h-4" />
-              Invite Link
+              <span className="hidden sm:inline">Invite Link</span>
             </button>
             <button
               onClick={loadData}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-all border border-slate-200"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-all border border-slate-200"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         }
@@ -225,13 +228,13 @@ export default function AdminSettingsPage() {
             ? 'bg-green-50 text-green-700 border-green-200'
             : 'bg-red-50 text-red-700 border-red-200'
         }`}>
-          {feedback.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          {feedback.type === 'success' ? <Check className="w-4 h-4 flex-shrink-0" /> : <X className="w-4 h-4 flex-shrink-0" />}
           {feedback.message}
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      {/* Stats — 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
           { label: 'Total Users',     value: stats.total,  icon: Users,       color: 'text-slate-700' },
           { label: 'Organizations',   value: stats.orgs,   icon: Building2,   color: 'text-blue-600'  },
@@ -248,11 +251,11 @@ export default function AdminSettingsPage() {
 
       {/* ── Invite Link Modal ── */}
       {showLinkModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="glass rounded-2xl p-6 w-full max-w-md border border-slate-200">
+        <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="glass rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-lg font-semibold text-slate-800">Generate Invite Link</h3>
-              <button onClick={() => setShowLinkModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowLinkModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -260,7 +263,6 @@ export default function AdminSettingsPage() {
               Share this link with someone who hasn&apos;t registered yet. They&apos;ll be automatically assigned to the selected organization and role on sign-up.
             </p>
 
-            {/* Organization picker */}
             <div className="mb-4">
               <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                 Organization
@@ -281,7 +283,6 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Role picker */}
             <div className="mb-5">
               <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                 Assign Role
@@ -308,7 +309,6 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Generated link */}
             <div className={`rounded-xl border p-3 mb-4 transition-all ${linkOrgId ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/50 border-dashed border-slate-200'}`}>
               <p className="text-xs text-slate-400 mb-1.5 font-medium">Invite URL</p>
               {linkOrgId ? (
@@ -343,9 +343,10 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="glass rounded-xl p-4 mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-48">
+      {/* Filters — stacked on mobile */}
+      <div className="glass rounded-xl p-4 mb-4 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+        {/* Search — full width on mobile */}
+        <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -356,42 +357,173 @@ export default function AdminSettingsPage() {
           />
         </div>
 
-        <div className="relative">
-          <select
-            value={filterOrg}
-            onChange={e => setFilterOrg(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm focus:outline-none focus:border-brand-400 cursor-pointer"
-          >
-            <option value="all">All Organizations</option>
-            <option value="none">No Organization</option>
-            {organizations.map(o => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        {/* Org + Role filters side by side on mobile */}
+        <div className="flex gap-3">
+          <div className="relative flex-1 sm:flex-none">
+            <select
+              value={filterOrg}
+              onChange={e => setFilterOrg(e.target.value)}
+              className="appearance-none w-full pl-3 pr-8 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm focus:outline-none focus:border-brand-400 cursor-pointer"
+            >
+              <option value="all">All Orgs</option>
+              <option value="none">No Org</option>
+              {organizations.map(o => (
+                <option key={o.id} value={o.id}>{o.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          <div className="relative flex-1 sm:flex-none">
+            <select
+              value={filterRole}
+              onChange={e => setFilterRole(e.target.value)}
+              className="appearance-none w-full pl-3 pr-8 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm focus:outline-none focus:border-brand-400 cursor-pointer"
+            >
+              <option value="all">All Roles</option>
+              {roleOptions.map(r => (
+                <option key={r} value={r}>{roleBadge[r].label}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
         </div>
 
-        <div className="relative">
-          <select
-            value={filterRole}
-            onChange={e => setFilterRole(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm focus:outline-none focus:border-brand-400 cursor-pointer"
-          >
-            <option value="all">All Roles</option>
-            {roleOptions.map(r => (
-              <option key={r} value={r}>{roleBadge[r].label}</option>
-            ))}
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        </div>
-
-        <span className="text-xs text-slate-400 ml-auto">
+        <span className="text-xs text-slate-400 sm:ml-auto text-right">
           {filtered.length} of {users.length} users
         </span>
       </div>
 
-      {/* Users Table */}
-      <div className="glass rounded-xl overflow-hidden">
+      {/* ── MOBILE: Card layout (hidden on md+) ── */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="glass rounded-xl p-12 text-center">
+            <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-400 text-sm">No users match your filters.</p>
+          </div>
+        ) : filtered.map(user => {
+          const isEditing = editingUser === user.id
+          const isMe = user.id === currentUser?.id
+          return (
+            <div key={user.id} className={`glass rounded-xl p-4 transition-colors ${isEditing ? 'ring-2 ring-brand-400/40 bg-brand-50/20' : ''}`}>
+              {/* Card header */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-brand-100 border border-brand-200 flex items-center justify-center text-sm font-semibold text-brand-700 flex-shrink-0">
+                    {getInitials(user.full_name, user.email)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm truncate">
+                      {user.full_name || '(No Name)'}
+                      {isMe && <span className="ml-1 text-xs text-brand-400 font-normal">(You)</span>}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+
+                {/* Edit / Save / Cancel buttons */}
+                {isEditing ? (
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => saveEdit(user.id)}
+                      disabled={saving}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition-all disabled:opacity-50"
+                    >
+                      {saving
+                        ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                        : <Check className="w-3 h-3" />}
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : !isMe ? (
+                  <button
+                    onClick={() => startEdit(user)}
+                    className="p-2 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-all flex-shrink-0"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              {/* Card body */}
+              <div className="space-y-2.5">
+                {/* Organization */}
+                <div>
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Organization</p>
+                  {isEditing ? (
+                    <div className="relative">
+                      <select
+                        value={editOrgId}
+                        onChange={e => setEditOrgId(e.target.value)}
+                        className="appearance-none w-full pl-3 pr-7 py-2 rounded-lg bg-white border border-brand-400 text-slate-800 text-sm focus:outline-none"
+                      >
+                        <option value="">— No Organization —</option>
+                        {organizations.map(o => (
+                          <option key={o.id} value={o.id}>{o.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                  ) : user.organization ? (
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                      <span className="text-slate-700 text-sm font-medium">{user.organization.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-amber-500 italic">No organization</span>
+                  )}
+                </div>
+
+                {/* Role */}
+                <div>
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Role</p>
+                  {isEditing ? (
+                    <div className="flex gap-1.5">
+                      {roleOptions.map(r => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setEditRole(r)}
+                          className={`flex-1 py-1.5 px-2 rounded-lg border text-xs font-medium transition-all ${
+                            editRole === r
+                              ? r === 'admin'
+                                ? 'bg-brand-100 border-brand-400 text-brand-700'
+                                : r === 'auditor'
+                                ? 'bg-purple-100 border-purple-400 text-purple-700'
+                                : 'bg-slate-200 border-slate-400 text-slate-700'
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                          }`}
+                        >
+                          {roleBadge[r].label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${roleBadge[user.role]?.color ?? roleBadge.auditee.color}`}>
+                      {roleBadge[user.role]?.label ?? user.role}
+                    </span>
+                  )}
+                </div>
+
+                {/* Joined date */}
+                <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-0.5">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  Joined {formatDate(user.created_at)}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── DESKTOP: Table layout (hidden on mobile) ── */}
+      <div className="hidden md:block glass rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/50">
@@ -439,7 +571,7 @@ export default function AdminSettingsPage() {
                   </div>
                 </td>
 
-                {/* Organization — editable */}
+                {/* Organization */}
                 <td className="px-6 py-3.5">
                   {editingUser === user.id ? (
                     <div className="relative">
@@ -465,7 +597,7 @@ export default function AdminSettingsPage() {
                   )}
                 </td>
 
-                {/* Role — editable */}
+                {/* Role */}
                 <td className="px-6 py-3.5">
                   {editingUser === user.id ? (
                     <div className="flex gap-1">
@@ -514,8 +646,7 @@ export default function AdminSettingsPage() {
                       >
                         {saving
                           ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
-                          : <Check className="w-3 h-3" />
-                        }
+                          : <Check className="w-3 h-3" />}
                         Save
                       </button>
                       <button

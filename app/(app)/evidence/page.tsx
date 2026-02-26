@@ -1,8 +1,7 @@
-
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { FolderOpen, Upload, FileText, Image, File, Trash2, Download, Link as LinkIcon, Search, Filter, X, CheckCircle, AlertCircle, Eye } from 'lucide-react'
+import { FolderOpen, Upload, FileText, Image, File, Trash2, Download, Link as LinkIcon, Search, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PageHeader from '@/components/ui/PageHeader'
 import type { EvidenceFile } from '@/types/phase2'
@@ -10,23 +9,23 @@ import type { EvidenceFile } from '@/types/phase2'
 const evidenceTypes = ['document', 'screenshot', 'policy', 'procedure', 'log', 'certificate', 'other'] as const
 
 const typeIcons: Record<string, any> = {
-  document: FileText,
-  screenshot: Image,
-  policy: FileText,
-  procedure: FileText,
-  log: File,
+  document:    FileText,
+  screenshot:  Image,
+  policy:      FileText,
+  procedure:   FileText,
+  log:         File,
   certificate: File,
-  other: File,
+  other:       File,
 }
 
 const typeColors: Record<string, string> = {
-  document: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  screenshot: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  policy: 'text-brand-400 bg-brand-500/10 border-brand-500/20',
-  procedure: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
-  log: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
-  certificate: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  other: 'text-slate-400 bg-slate-500/10 border-slate-500/20',
+  document:    'text-blue-600 bg-blue-50 border-blue-200',
+  screenshot:  'text-purple-600 bg-purple-50 border-purple-200',
+  policy:      'text-brand-600 bg-brand-50 border-brand-200',
+  procedure:   'text-cyan-600 bg-cyan-50 border-cyan-200',
+  log:         'text-orange-600 bg-orange-50 border-orange-200',
+  certificate: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+  other:       'text-slate-500 bg-slate-50 border-slate-200',
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -94,20 +93,15 @@ export default function EvidencePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Upload to storage
     const filePath = `${orgId}/${Date.now()}-${selectedFile.name}`
-    const { error: storageError } = await supabase.storage
-      .from('evidence')
-      .upload(filePath, selectedFile)
+    const { error: storageError } = await supabase.storage.from('evidence').upload(filePath, selectedFile)
 
     if (storageError) {
-      // Storage might not be configured - save metadata only for demo
-      setUploadError(`Storage error: ${storageError.message}. Note: You must create an 'evidence' storage bucket in Supabase.`)
+      setUploadError(`Storage error: ${storageError.message}. Create an 'evidence' bucket in Supabase.`)
       setUploading(false)
       return
     }
 
-    // Save metadata
     const { error: dbError } = await supabase.from('evidence_files').insert({
       organization_id: orgId,
       control_id: uploadForm.control_id || null,
@@ -120,11 +114,7 @@ export default function EvidencePage() {
       uploaded_by: user.id,
     })
 
-    if (dbError) {
-      setUploadError(dbError.message)
-      setUploading(false)
-      return
-    }
+    if (dbError) { setUploadError(dbError.message); setUploading(false); return }
 
     setUploading(false)
     setUploadSuccess(true)
@@ -157,7 +147,8 @@ export default function EvidencePage() {
   }
 
   const filtered = files.filter(f => {
-    const matchSearch = !search || f.file_name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = !search ||
+      f.file_name.toLowerCase().includes(search.toLowerCase()) ||
       f.description?.toLowerCase().includes(search.toLowerCase()) ||
       (f.control as any)?.name?.toLowerCase().includes(search.toLowerCase())
     const matchType = typeFilter === 'all' || f.evidence_type === typeFilter
@@ -167,19 +158,20 @@ export default function EvidencePage() {
   const stats = {
     total: files.length,
     linked: files.filter(f => f.control_id).length,
+    totalSize: files.reduce((sum, f) => sum + (f.file_size || 0), 0),
     types: evidenceTypes.reduce((acc, t) => ({ ...acc, [t]: files.filter(f => f.evidence_type === t).length }), {} as Record<string, number>),
   }
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-96">
+      <div className="p-4 md:p-8 flex items-center justify-center min-h-96">
         <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <PageHeader
         title="Evidence Management"
         subtitle="Upload and link evidence files to ISO 27001 controls"
@@ -189,37 +181,29 @@ export default function EvidencePage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all"
           >
             <Upload className="w-4 h-4" />
-            Upload Evidence
+            <span className="hidden sm:inline">Upload Evidence</span>
+            <span className="sm:hidden">Upload</span>
           </button>
         }
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-white tabular-nums">{stats.total}</p>
-          <p className="text-xs text-slate-600 mt-1">Total Files</p>
-        </div>
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-400 tabular-nums">{stats.linked}</p>
-          <p className="text-xs text-slate-600 mt-1">Linked to Controls</p>
-        </div>
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-slate-300 tabular-nums">{stats.total - stats.linked}</p>
-          <p className="text-xs text-slate-600 mt-1">Unlinked</p>
-        </div>
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-brand-400 tabular-nums">
-            {files.reduce((sum, f) => sum + (f.file_size || 0), 0) > 0
-              ? formatFileSize(files.reduce((sum, f) => sum + (f.file_size || 0), 0))
-              : '0 B'}
-          </p>
-          <p className="text-xs text-slate-600 mt-1">Total Size</p>
-        </div>
+      {/* Stats — 2 cols mobile, 4 cols md+ */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total Files',        value: stats.total,                  color: 'text-slate-700' },
+          { label: 'Linked to Controls', value: stats.linked,                 color: 'text-emerald-600' },
+          { label: 'Unlinked',           value: stats.total - stats.linked,   color: 'text-slate-500' },
+          { label: 'Total Size',         value: stats.totalSize > 0 ? formatFileSize(stats.totalSize) : '0 B', color: 'text-brand-600' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="glass rounded-xl p-4 text-center">
+            <p className={`text-xl md:text-2xl font-bold tabular-nums ${color}`}>{value}</p>
+            <p className="text-xs text-slate-500 mt-1">{label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Type breakdown */}
-      <div className="glass rounded-xl p-4 mb-6 flex flex-wrap gap-2">
+      {/* Type filter pills */}
+      <div className="glass rounded-xl p-3 md:p-4 mb-5 flex flex-wrap gap-2">
         {evidenceTypes.map(type => {
           const count = stats.types[type] || 0
           if (count === 0) return null
@@ -229,7 +213,9 @@ export default function EvidencePage() {
               key={type}
               onClick={() => setTypeFilter(typeFilter === type ? 'all' : type)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                typeFilter === type ? typeColors[type] : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
+                typeFilter === type
+                  ? typeColors[type]
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -238,46 +224,47 @@ export default function EvidencePage() {
           )
         })}
         {typeFilter !== 'all' && (
-          <button onClick={() => setTypeFilter('all')} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-400 transition-colors">
-            <X className="w-3 h-3" /> Clear filter
+          <button
+            onClick={() => setTypeFilter('all')}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X className="w-3 h-3" /> Clear
           </button>
         )}
       </div>
 
       {/* Search */}
       <div className="relative mb-5">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="input-dark pl-10 w-full max-w-lg"
+          className="input-dark pl-10 w-full md:max-w-lg"
           placeholder="Search by filename, description, or control..."
         />
       </div>
 
-      {/* File Grid */}
+      {/* File Grid — 1 col mobile, 2 cols sm, 3 cols lg */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(file => {
             const Icon = typeIcons[file.evidence_type] || File
             const typeColor = typeColors[file.evidence_type] || typeColors.other
-            const isImage = file.file_type?.startsWith('image/')
-            const isPDF = file.file_type === 'application/pdf'
 
             return (
-              <div key={file.id} className="glass rounded-xl p-5 card-hover group">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 ${typeColor}`}>
-                    <Icon className="w-5 h-5" />
+              <div key={file.id} className="glass rounded-xl p-4 md:p-5 card-hover group">
+                <div className="flex items-start gap-3 mb-3 md:mb-4">
+                  <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center border flex-shrink-0 ${typeColor}`}>
+                    <Icon className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-200 truncate">{file.file_name}</p>
+                    <p className="text-sm font-medium text-slate-700 truncate">{file.file_name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded border ${typeColor}`}>
                         {file.evidence_type}
                       </span>
-                      <span className="text-[11px] text-slate-600">{formatFileSize(file.file_size)}</span>
+                      <span className="text-[11px] text-slate-400">{formatFileSize(file.file_size)}</span>
                     </div>
                   </div>
                 </div>
@@ -288,24 +275,25 @@ export default function EvidencePage() {
 
                 {/* Linked control */}
                 {(file.control as any) ? (
-                  <div className="flex items-center gap-1.5 mb-3 p-2 rounded-lg bg-brand-500/5 border border-brand-500/15">
-                    <LinkIcon className="w-3 h-3 text-brand-400 flex-shrink-0" />
-                    <span className="text-[11px] text-brand-400 truncate">
+                  <div className="flex items-center gap-1.5 mb-3 p-2 rounded-lg bg-brand-50 border border-brand-100">
+                    <LinkIcon className="w-3 h-3 text-brand-500 flex-shrink-0" />
+                    <span className="text-[11px] text-brand-600 truncate">
                       {(file.control as any).control_id} — {(file.control as any).name}
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <span className="text-[11px] text-slate-700 italic">Not linked to a control</span>
+                  <div className="mb-3">
+                    <span className="text-[11px] text-slate-400 italic">Not linked to a control</span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-slate-700">{formatDate(file.uploaded_at)}</span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[11px] text-slate-400">{formatDate(file.uploaded_at)}</span>
+                  {/* Actions — always visible on mobile, hover on desktop */}
+                  <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleDownload(file)}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-brand-400 hover:bg-brand-500/10 transition-all"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-all"
                       title="Download"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -313,11 +301,11 @@ export default function EvidencePage() {
                     <button
                       onClick={() => handleDelete(file)}
                       disabled={deletingId === file.id}
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all disabled:opacity-50"
                       title="Delete"
                     >
                       {deletingId === file.id
-                        ? <div className="w-3.5 h-3.5 border border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                        ? <div className="w-3.5 h-3.5 border border-red-400/30 border-t-red-500 rounded-full animate-spin" />
                         : <Trash2 className="w-3.5 h-3.5" />
                       }
                     </button>
@@ -328,12 +316,12 @@ export default function EvidencePage() {
           })}
         </div>
       ) : (
-        <div className="glass rounded-xl p-16 text-center">
-          <FolderOpen className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-400 mb-2">
+        <div className="glass rounded-xl p-12 md:p-16 text-center">
+          <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-600 mb-2">
             {search || typeFilter !== 'all' ? 'No files match your search' : 'No Evidence Files Yet'}
           </h3>
-          <p className="text-slate-600 text-sm mb-5">
+          <p className="text-slate-400 text-sm mb-5">
             {search || typeFilter !== 'all'
               ? 'Try adjusting your search or filter.'
               : 'Upload policies, screenshots, certificates, and other evidence to support your ISO 27001 audit.'}
@@ -352,69 +340,76 @@ export default function EvidencePage() {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowUpload(false); setSelectedFile(null) }} />
-          <div className="relative w-full max-w-lg glass rounded-2xl p-6 animate-fade-up">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-white">Upload Evidence</h3>
-              <button onClick={() => { setShowUpload(false); setSelectedFile(null) }} className="text-slate-600 hover:text-slate-400 transition-colors">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => { setShowUpload(false); setSelectedFile(null) }}
+          />
+          {/* Sheet on mobile (slides from bottom), centered modal on sm+ */}
+          <div className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-fade-up">
+            <div className="sticky top-0 bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between z-10">
+              <h3 className="text-base font-semibold text-slate-800">Upload Evidence</h3>
+              <button
+                onClick={() => { setShowUpload(false); setSelectedFile(null) }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {uploadSuccess && (
-              <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <p className="text-sm text-emerald-400">File uploaded successfully!</p>
-              </div>
-            )}
-
-            {uploadError && (
-              <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-red-400">{uploadError}</p>
-              </div>
-            )}
-
-            {/* Drop zone */}
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-5 ${
-                dragOver
-                  ? 'border-brand-500 bg-brand-500/10'
-                  : selectedFile
-                    ? 'border-emerald-500/50 bg-emerald-500/5'
-                    : 'border-slate-700 hover:border-slate-600 bg-slate-900/40'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt,.csv,.xlsx"
-                onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-              />
-              {selectedFile ? (
-                <div className="flex items-center justify-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-emerald-400" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-slate-200">{selectedFile.name}</p>
-                    <p className="text-xs text-slate-500">{formatFileSize(selectedFile.size)}</p>
-                  </div>
+            <div className="p-5 space-y-4">
+              {uploadSuccess && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  <p className="text-sm text-emerald-700">File uploaded successfully!</p>
                 </div>
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400">Drag & drop or click to select file</p>
-                  <p className="text-xs text-slate-600 mt-1">PDF, DOC, PNG, JPG, TXT, XLSX — Max 50MB</p>
-                </>
               )}
-            </div>
 
-            <div className="space-y-3">
+              {uploadError && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200">
+                  <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-red-600">{uploadError}</p>
+                </div>
+              )}
+
+              {/* Drop zone */}
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 md:p-8 text-center cursor-pointer transition-all ${
+                  dragOver
+                    ? 'border-brand-400 bg-brand-50'
+                    : selectedFile
+                      ? 'border-emerald-400 bg-emerald-50'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt,.csv,.xlsx"
+                  onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                />
+                {selectedFile ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+                    <div className="text-left min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-slate-400">{formatFileSize(selectedFile.size)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">Drag & drop or tap to select file</p>
+                    <p className="text-xs text-slate-400 mt-1">PDF, DOC, PNG, JPG, TXT, XLSX — Max 50MB</p>
+                  </>
+                )}
+              </div>
+
               <div>
                 <label className="label-dark">Evidence Type</label>
                 <select
@@ -423,7 +418,7 @@ export default function EvidencePage() {
                   className="input-dark"
                 >
                   {evidenceTypes.map(t => (
-                    <option key={t} value={t} className="bg-slate-900">
+                    <option key={t} value={t}>
                       {t.charAt(0).toUpperCase() + t.slice(1)}
                     </option>
                   ))}
@@ -437,9 +432,9 @@ export default function EvidencePage() {
                   onChange={e => setUploadForm({ ...uploadForm, control_id: e.target.value })}
                   className="input-dark"
                 >
-                  <option value="" className="bg-slate-900">— Select control —</option>
+                  <option value="">— Select control —</option>
                   {controls.map(c => (
-                    <option key={c.id} value={c.id} className="bg-slate-900">
+                    <option key={c.id} value={c.id}>
                       {c.control_id} — {c.name}
                     </option>
                   ))}
@@ -457,10 +452,11 @@ export default function EvidencePage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-5">
+            {/* Sticky footer */}
+            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-5 py-4 flex gap-3">
               <button
                 onClick={() => { setShowUpload(false); setSelectedFile(null) }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 text-sm transition-all"
               >
                 Cancel
               </button>

@@ -16,11 +16,11 @@ const badgeMap: Record<string, string> = {
 }
 
 const dotMap: Record<string, string> = {
-  critical: 'bg-red-400',
-  high: 'bg-orange-400',
-  medium: 'bg-yellow-400',
-  low: 'bg-green-400',
-  negligible: 'bg-slate-500',
+  critical: 'bg-red-600',
+  high: 'bg-orange-600',
+  medium: 'bg-yellow-600',
+  low: 'bg-green-600',
+  negligible: 'bg-slate-400',
 }
 
 export default function RiskBadge({ level, className, size = 'md' }: BadgeProps) {
@@ -34,7 +34,7 @@ export default function RiskBadge({ level, className, size = 'md' }: BadgeProps)
       badge,
       className
     )}>
-      <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />
+      <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', dot)} />
       {level.charAt(0).toUpperCase() + level.slice(1)}
     </span>
   )

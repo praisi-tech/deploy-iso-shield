@@ -43,8 +43,8 @@ export default function TopBar({ profile }: TopBarProps) {
     <>
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
@@ -59,12 +59,12 @@ export default function TopBar({ profile }: TopBarProps) {
             <p className="text-sm text-slate-500">Are you sure you want to sign out of this session?</p>
             
             {profile && (
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
                     alt="avatar"
-                    className="w-9 h-9 rounded-lg object-cover border border-slate-200"
+                    className="w-9 h-9 rounded-lg object-cover border border-slate-200 flex-shrink-0"
                   />
                 ) : (
                   <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 flex-shrink-0">
@@ -78,13 +78,13 @@ export default function TopBar({ profile }: TopBarProps) {
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-col xs:flex-row gap-2 pt-1">
               <button onClick={() => setShowLogoutModal(false)} disabled={loggingOut}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all disabled:opacity-50">
+                className="order-2 xs:order-1 flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all disabled:opacity-50">
                 Cancel
               </button>
               <button onClick={handleLogout} disabled={loggingOut}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all disabled:opacity-60">
+                className="order-1 xs:order-2 flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all disabled:opacity-60">
                 <LogOut className="w-4 h-4" />
                 {loggingOut ? 'Signing out...' : 'Yes, Sign Out'}
               </button>
@@ -94,18 +94,19 @@ export default function TopBar({ profile }: TopBarProps) {
       )}
 
       {/* Main TopBar */}
-      <div className="h-16 flex items-center justify-end px-6 gap-3 flex-shrink-0 border-b border-white/5"
+      <header className="h-16 flex items-center justify-end px-3 sm:px-6 gap-2 sm:gap-4 flex-shrink-0 border-b border-white/5 relative z-50"
         style={{ background: 'linear-gradient(90deg, #1a1f38 0%, #151929 100%)' }}>
 
         <Link
           href="/ai-assistant"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-medium
           bg-emerald-500/15 text-emerald-300 border border-emerald-400/30
-          hover:bg-emerald-500/25 transition-all shadow-sm"
+          hover:bg-emerald-500/25 transition-all shadow-sm group whitespace-nowrap"
         >
-          <Sparkles className="w-4 h-4" />
-          AI Assistant
-          <span className="text-[9px] font-bold px-1.5 py-[2px] rounded-md bg-emerald-400/20 border border-emerald-400/30">
+          {/* FIX 1: was "sm:w-4 sm:h-4" → now "sm:w-4 sm:h-4" */}
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span>AI Assistant</span>
+          <span className="text-[8px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-[1px] sm:py-[2px] rounded-md bg-emerald-400/20 border border-emerald-400/30 group-hover:bg-emerald-400/30 transition-colors">
             NEW
           </span>
         </Link>
@@ -114,33 +115,34 @@ export default function TopBar({ profile }: TopBarProps) {
           <div className="relative">
             <button
               onClick={() => setOpen(o => !o)}
-              className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-white/8 border border-transparent hover:border-white/10 transition-all"
+              className="flex items-center gap-1.5 sm:gap-3 pl-1.5 pr-0.5 sm:px-4 py-1.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
             >
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt="avatar"
-                  className="w-9 h-9 rounded-xl object-cover border border-indigo-400/30 flex-shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl object-cover border border-indigo-400/30 flex-shrink-0"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-sm font-bold text-indigo-300 flex-shrink-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-xs sm:text-sm font-bold text-indigo-300 flex-shrink-0">
                   {profile.full_name ? getInitials(profile.full_name) : '?'}
                 </div>
               )}
               
-              <div className="text-left hidden sm:block">
-                <p className="text-sm font-semibold text-white/90 leading-none mb-1">{profile.full_name || 'User'}</p>
-                <span className={`text-[10px] border rounded-md px-1.5 py-0.5 font-semibold inline-block ${roleBadgeColor[profile.role] || roleBadgeColor.auditee}`}>
+              <div className="text-left hidden lg:block max-w-[120px]">
+                <p className="text-sm font-semibold text-white/90 leading-none mb-1 truncate">{profile.full_name || 'User'}</p>
+                <span className={`text-[9px] border rounded-md px-1.5 py-0.5 font-semibold inline-block tracking-wider ${roleBadgeColor[profile.role] || roleBadgeColor.auditee}`}>
                   {profile.role.toUpperCase()}
                 </span>
               </div>
-              <ChevronDown className={`w-4 h-4 text-white/30 transition-transform ml-1 ${open ? 'rotate-180' : ''}`} />
+              {/* FIX 2: was "sm:w-4 sm:h-4" → now "sm:w-4 sm:h-4" */}
+              <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-white/10 shadow-2xl z-40 overflow-hidden"
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1.5rem)] sm:w-72 rounded-2xl border border-white/10 shadow-2xl z-40 overflow-hidden"
                   style={{ background: 'linear-gradient(160deg, #1e2340 0%, #151929 100%)' }}>
 
                   <div className="px-5 py-4 border-b border-white/8">
@@ -159,6 +161,11 @@ export default function TopBar({ profile }: TopBarProps) {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-white/90 truncate">{profile.full_name || 'User'}</p>
                         <p className="text-xs text-white/40 truncate mt-0.5">{profile.email}</p>
+                        <div className="lg:hidden mt-1.5">
+                           <span className={`text-[8px] border rounded-md px-1 py-0.5 font-bold tracking-widest ${roleBadgeColor[profile.role] || roleBadgeColor.auditee}`}>
+                            {profile.role.toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -167,31 +174,31 @@ export default function TopBar({ profile }: TopBarProps) {
                     <Link href="/profile" onClick={() => setOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/8 transition-all">
                       <User className="w-4 h-4 flex-shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">My Profile</p>
-                        <p className="text-xs text-white/30 mt-0.5">Edit photo & account info</p>
+                        <p className="text-[11px] text-white/30 mt-0.5 truncate">Edit photo & account info</p>
                       </div>
                     </Link>
 
                     <Link href="/settings" onClick={() => setOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/8 transition-all">
                       <Users className="w-4 h-4 flex-shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">User Management</p>
-                        <p className="text-xs text-white/30 mt-0.5">Manage team members & roles</p>
+                        <p className="text-[11px] text-white/30 mt-0.5 truncate">Manage team members & roles</p>
                       </div>
                     </Link>
                   </div>
 
-                  <div className="border-t border-white/8 py-2 px-2">
+                  <div className="border-t border-white/8 py-2 px-2 bg-black/10">
                     <button
                       onClick={() => { setOpen(false); setShowLogoutModal(true) }}
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
                     >
                       <LogOut className="w-4 h-4 flex-shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">Sign Out</p>
-                        <p className="text-xs text-red-400/50 mt-0.5">Exit from this session</p>
+                        <p className="text-[11px] text-red-400/50 mt-0.5 truncate">Exit from this session</p>
                       </div>
                     </button>
                   </div>
@@ -200,7 +207,7 @@ export default function TopBar({ profile }: TopBarProps) {
             )}
           </div>
         )}
-      </div>
+      </header>
     </>
   )
 }

@@ -113,19 +113,26 @@ export default function OrganizationPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
-    if (org && profile?.organization_id) {
-      const { error } = await supabase.from('organizations').update(form).eq('id', org.id)
-      if (error) { setFeedback({ type: 'error', msg: error.message }); setSaving(false); return }
-      setOrg({ ...org, ...form } as Organization)
-    } else {
-      const { data: newOrg, error } = await supabase.from('organizations').insert({ ...form, created_by: user.id } as any).select().single()
-      if (error) { setFeedback({ type: 'error', msg: error.message }); setSaving(false); return }
-      await supabase.from('profiles').update({ organization_id: newOrg.id, role: 'admin' }).eq('id', user.id)
-      setOrg(newOrg)
+    
+    try {
+      if (org && profile?.organization_id) {
+        const { error } = await supabase.from('organizations').update(form).eq('id', org.id)
+        if (error) throw error
+        setOrg({ ...org, ...form } as Organization)
+      } else {
+        const { data: newOrg, error } = await supabase.from('organizations').insert({ ...form, created_by: user.id } as any).select().single()
+        if (error) throw error
+        await supabase.from('profiles').update({ organization_id: newOrg.id, role: 'admin' }).eq('id', user.id)
+        setOrg(newOrg)
+      }
+      setEditing(false)
+      setFeedback({ type: 'success', msg: 'Organization profile saved successfully!' })
+    } catch (error: any) {
+      setFeedback({ type: 'error', msg: error.message })
+    } finally {
+      setSaving(false)
+      setTimeout(() => setFeedback(null), 3500)
     }
-    setSaving(false); setEditing(false)
-    setFeedback({ type: 'success', msg: 'Organization profile saved successfully!' })
-    setTimeout(() => setFeedback(null), 3500)
   }
 
   async function handleUploadLogo() {
@@ -185,27 +192,27 @@ export default function OrganizationPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-8 py-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-8 py-5">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left">
             <h1 className="text-xl font-bold text-slate-800">Organization Profile</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Manage your organization's profile and ISO 27001 audit scope</p>
+            <p className="text-sm text-slate-500 mt-0.5">Manage organization details and ISO 27001 audit scope</p>
           </div>
           {!editing ? (
             <button onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
               <Edit3 className="w-4 h-4" /> Edit Profile
             </button>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex w-full sm:w-auto items-center gap-2">
               {org && (
                 <button onClick={() => { setEditing(false); setForm(org) }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium transition-all">
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium transition-all">
                   <X className="w-4 h-4" /> Cancel
                 </button>
               )}
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 disabled:opacity-50">
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 disabled:opacity-50">
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : org ? 'Save Changes' : 'Create Organization'}
               </button>
@@ -214,8 +221,8 @@ export default function OrganizationPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 py-6 space-y-5">
-        {/* Feedback */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 space-y-5">
+        {/* Feedback Messages */}
         {feedback && (
           <div className={`flex items-center gap-3 p-4 rounded-xl border text-sm
             ${feedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
@@ -224,15 +231,15 @@ export default function OrganizationPage() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty State */}
         {!org && !editing && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 sm:p-16 text-center shadow-sm">
             <Building2 className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Organization Yet</h3>
-            <p className="text-slate-500 text-sm mb-6">Create an organization profile to start the ISO 27001 audit process.</p>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Organization Found</h3>
+            <p className="text-slate-500 text-sm mb-6">You haven't set up an organization profile yet. This is required for ISO 27001 audits.</p>
             <button onClick={() => setEditing(true)}
               className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all">
-              Create Organization
+              Create Organization Profile
             </button>
           </div>
         )}
@@ -240,12 +247,12 @@ export default function OrganizationPage() {
         {/* VIEW MODE */}
         {!editing && org && (
           <div className="space-y-5">
-            {/* Logo Modal */}
+            {/* Logo Change Modal */}
             {showLogoModal && (
               <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
                 <div className="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-800">Edit Logo Organisasi</h3>
+                    <h3 className="font-semibold text-slate-800">Organization Logo</h3>
                     <button onClick={() => { setShowLogoModal(false); setLogoPreview(null); setLogoFile(null) }}
                       className="text-slate-400 hover:text-slate-600 transition-colors">
                       <X className="w-5 h-5" />
@@ -264,15 +271,15 @@ export default function OrganizationPage() {
                   <div onClick={() => fileInputRef.current?.click()}
                     className="border-2 border-dashed border-slate-200 hover:border-indigo-300 rounded-xl p-5 text-center cursor-pointer transition-colors group">
                     <Upload className="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mx-auto mb-2 transition-colors" />
-                    <p className="text-sm text-slate-500">{logoFile ? logoFile.name : 'Klik untuk pilih logo'}</p>
-                    <p className="text-xs text-slate-400 mt-1">PNG, JPG, SVG, WebP — maks 2MB</p>
+                    <p className="text-sm text-slate-500">{logoFile ? logoFile.name : 'Click to select logo'}</p>
+                    <p className="text-xs text-slate-400 mt-1">PNG, JPG, SVG, WebP — max 2MB</p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFileChange} />
                   <div className="flex gap-2">
                     <button onClick={handleUploadLogo} disabled={!logoFile || uploadingLogo}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-all disabled:opacity-40">
                       {uploadingLogo ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      {uploadingLogo ? 'Mengupload...' : 'Simpan Logo'}
+                      {uploadingLogo ? 'Uploading...' : 'Save Logo'}
                     </button>
                     {(org as any)?.logo_url && (
                       <button onClick={handleRemoveLogo} disabled={uploadingLogo}
@@ -285,31 +292,32 @@ export default function OrganizationPage() {
               </div>
             )}
 
-            {/* Hero card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start gap-6 shadow-sm">
+            {/* Profile Hero Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm">
               <button onClick={() => setShowLogoModal(true)} className="relative group flex-shrink-0">
                 {(org as any)?.logo_url ? (
                   <img src={(org as any).logo_url} alt="Logo"
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-100 group-hover:border-indigo-300 transition-colors" />
+                    className="w-20 h-20 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-indigo-100 group-hover:border-indigo-300 transition-colors" />
                 ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 border-2 border-indigo-100 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-                    <Building2 className="w-8 h-8 text-indigo-400" />
+                  <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 border-2 border-indigo-100 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
+                    {/* FIX 1: was "sm:w-8 h-8" → now "sm:w-8 sm:h-8" */}
+                    <Building2 className="w-10 h-10 sm:w-8 sm:h-8 text-indigo-400" />
                   </div>
                 )}
                 <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="w-5 h-5 text-white" />
                 </div>
               </button>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-center sm:text-left">
                 <h2 className="text-2xl font-bold text-slate-800">{org.name}</h2>
-                <p className="text-slate-500 text-sm mt-1">{org.description || 'Tidak ada deskripsi'}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-3">
+                <p className="text-slate-500 text-sm mt-1">{org.description || 'No description provided'}</p>
+                <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mt-3">
                   <span className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
                     {currentSector?.label || org.sector}
                   </span>
                   {org.employee_count && (
                     <span className="flex items-center gap-1.5 text-xs bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-full">
-                      <Users className="w-3 h-3" /> {org.employee_count.toLocaleString()} karyawan
+                      <Users className="w-3 h-3" /> {org.employee_count.toLocaleString()} employees
                     </span>
                   )}
                   {org.country && (
@@ -319,41 +327,38 @@ export default function OrganizationPage() {
                   )}
                 </div>
               </div>
-              <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 px-3 py-1.5 rounded-lg transition-all flex-shrink-0">
-                <Edit3 className="w-3.5 h-3.5" /> Edit
-              </button>
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Exposure Level', value: currentExposure?.label || '—', icon: currentExposure?.icon || Wifi, bg: 'bg-red-50', iconColor: 'text-red-500', textColor: 'text-red-700' },
+                { label: 'Exposure', value: currentExposure?.label || '—', icon: currentExposure?.icon || Wifi, bg: 'bg-red-50', iconColor: 'text-red-500', textColor: 'text-red-700' },
                 { label: 'Risk Appetite', value: currentRisk?.label || '—', icon: TrendingUp, bg: 'bg-amber-50', iconColor: 'text-amber-500', textColor: 'text-amber-700' },
-                { label: 'Audit Mulai', value: org.audit_period_start ? new Date(org.audit_period_start).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—', icon: Calendar, bg: 'bg-purple-50', iconColor: 'text-purple-500', textColor: 'text-purple-700' },
-                { label: 'Audit Selesai', value: org.audit_period_end ? new Date(org.audit_period_end).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—', icon: BadgeCheck, bg: 'bg-cyan-50', iconColor: 'text-cyan-500', textColor: 'text-cyan-700' },
+                { label: 'Audit Starts', value: org.audit_period_start ? new Date(org.audit_period_start).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—', icon: Calendar, bg: 'bg-purple-50', iconColor: 'text-purple-500', textColor: 'text-purple-700' },
+                { label: 'Audit Ends', value: org.audit_period_end ? new Date(org.audit_period_end).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—', icon: BadgeCheck, bg: 'bg-cyan-50', iconColor: 'text-cyan-500', textColor: 'text-cyan-700' },
               ].map(({ label, value, icon: Icon, bg, iconColor, textColor }) => (
-                <div key={label} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${bg}`}>
+                <div key={label} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm text-center sm:text-left">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 mx-auto sm:mx-0 ${bg}`}>
                     <Icon className={`w-4 h-4 ${iconColor}`} />
                   </div>
                   <p className="text-xs text-slate-500 mb-1">{label}</p>
-                  <p className={`text-sm font-semibold ${textColor}`}>{value}</p>
+                  <p className={`text-sm font-semibold truncate ${textColor}`}>{value}</p>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
-              <SectionCard title="Informasi Kontak" icon={Mail} iconBg="bg-blue-50 text-blue-500">
-                <InfoRow label="Narahubung" value={org.contact_name} icon={Users} />
-                <InfoRow label="Email" value={org.contact_email} icon={Mail} />
-                <InfoRow label="Telepon" value={org.contact_phone} icon={Phone} />
-                <InfoRow label="Website" value={org.website} icon={Globe} />
-                <InfoRow label="Alamat" value={org.address} icon={MapPin} />
+            {/* Content Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <SectionCard title="Contact Information" icon={Mail} iconBg="bg-blue-50 text-blue-500">
+                <InfoRow label="Primary Contact" value={org.contact_name} icon={Users} />
+                <InfoRow label="Email Address" value={org.contact_email} icon={Mail} />
+                <InfoRow label="Phone Number" value={org.contact_phone} icon={Phone} />
+                <InfoRow label="Official Website" value={org.website} icon={Globe} />
+                <InfoRow label="Office Address" value={org.address} icon={MapPin} />
               </SectionCard>
 
               <div className="space-y-5">
-                <SectionCard title="Tipe Sistem dalam Scope" icon={Server} iconBg="bg-purple-50 text-purple-500">
+                <SectionCard title="System Infrastructure Types" icon={Server} iconBg="bg-purple-50 text-purple-500">
                   {(org.system_types || []).length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {(org.system_types || []).map(t => {
@@ -366,13 +371,13 @@ export default function OrganizationPage() {
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-400 italic">Belum ada sistem yang dipilih</p>
+                    <p className="text-sm text-slate-400 italic">No system types specified</p>
                   )}
                 </SectionCard>
 
-                <SectionCard title="Lingkup Audit (Scope)" icon={Shield} iconBg="bg-emerald-50 text-emerald-500">
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {org.scope_description || <span className="italic text-slate-400">Belum ada deskripsi scope</span>}
+                <SectionCard title="Audit Scope Definition" icon={Shield} iconBg="bg-emerald-50 text-emerald-500">
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    {org.scope_description || <span className="italic text-slate-400">No scope description provided.</span>}
                   </p>
                 </SectionCard>
               </div>
@@ -382,172 +387,124 @@ export default function OrganizationPage() {
 
         {/* EDIT MODE */}
         {editing && (
-          <div className="space-y-5">
-            <SectionCard title="Informasi Dasar" icon={Building2} iconBg="bg-indigo-50 text-indigo-500">
-              <div className="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100">
-                <button onClick={() => setShowLogoModal(true)} className="relative group flex-shrink-0">
-                  {(org as any)?.logo_url ? (
-                    <img src={(org as any).logo_url} alt="Logo"
-                      className="w-14 h-14 rounded-xl object-cover border-2 border-indigo-100 group-hover:border-indigo-300 transition-colors" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-indigo-50 border-2 border-indigo-100 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-                      <Building2 className="w-6 h-6 text-indigo-400" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 rounded-xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Camera className="w-4 h-4 text-white" />
-                  </div>
-                </button>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Logo Organisasi</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Klik logo untuk upload foto atau ikon organisasi</p>
+          <div className="space-y-5 animate-in fade-in duration-300 pb-10">
+            <SectionCard title="Basic Information" icon={Building2} iconBg="bg-indigo-50 text-indigo-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Organization Name *</label>
+                  <input type="text" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="e.g., Global Tech Solutions" />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="label-dark">Nama Organisasi *</label>
-                  <input type="text" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} className="input-dark" placeholder="PT. Contoh Indonesia" />
-                </div>
-                <div className="col-span-2">
-                  <label className="label-dark">Deskripsi</label>
-                  <textarea value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} className="input-dark h-20 resize-none" placeholder="Deskripsi singkat organisasi..." />
+                <div className="md:col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Description</label>
+                  <textarea value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all h-24 resize-none" 
+                    placeholder="Tell us about your company..." />
                 </div>
                 <div>
-                  <label className="label-dark">Sektor Bisnis *</label>
-                  <select value={form.sector || 'technology'} onChange={e => setForm({ ...form, sector: e.target.value as any })} className="input-dark">
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Business Sector *</label>
+                  <select value={form.sector || 'technology'} onChange={e => setForm({ ...form, sector: e.target.value as any })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all appearance-none bg-white">
                     {sectors.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label-dark">Jumlah Karyawan</label>
-                  <input type="number" value={form.employee_count || ''} onChange={e => setForm({ ...form, employee_count: parseInt(e.target.value) || null })} className="input-dark" placeholder="e.g., 500" />
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Employee Count</label>
+                  <input type="number" value={form.employee_count || ''} onChange={e => setForm({ ...form, employee_count: parseInt(e.target.value) || null })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="e.g., 250" />
                 </div>
                 <div>
-                  <label className="label-dark">Negara</label>
-                  <input type="text" value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="input-dark" placeholder="Indonesia" />
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Country</label>
+                  <input type="text" value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="Indonesia" />
                 </div>
                 <div>
-                  <label className="label-dark">Website</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="url" value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} className="input-dark pl-10" placeholder="https://company.com" />
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Website</label>
+                  <input type="url" value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="https://example.com" />
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Contact Information" icon={Mail} iconBg="bg-blue-50 text-blue-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Point of Contact</label>
+                  <input type="text" value={form.contact_name || ''} onChange={e => setForm({ ...form, contact_name: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="Full name" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Contact Email</label>
+                  <input type="email" value={form.contact_email || ''} onChange={e => setForm({ ...form, contact_email: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="security@example.com" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Phone Number</label>
+                  <input type="tel" value={form.contact_phone || ''} onChange={e => setForm({ ...form, contact_phone: e.target.value })} 
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" 
+                    placeholder="+1 234..." />
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Infrastructure & Scope" icon={Server} iconBg="bg-purple-50 text-purple-500">
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-3 block">System Types (Select all that apply)</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                    {systemTypeOptions.map(({ id, label, icon }) => {
+                      const selected = (form.system_types || []).includes(id)
+                      return (
+                        <button key={id} type="button" onClick={() => toggleSystemType(id)}
+                          className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all text-center
+                            ${selected ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                          <span className="text-xl">{icon}</span>
+                          <span className="text-[10px] font-bold leading-tight uppercase">{label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-                <div className="col-span-2">
-                  <label className="label-dark">Alamat</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                    <textarea value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })} className="input-dark pl-10 h-16 resize-none" placeholder="Jl. Sudirman No. 1, Jakarta" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Audit Start Date</label>
+                    <input type="date" value={form.audit_period_start || ''} onChange={e => setForm({ ...form, audit_period_start: e.target.value })} 
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Audit End Date</label>
+                    <input type="date" value={form.audit_period_end || ''} onChange={e => setForm({ ...form, audit_period_end: e.target.value })} 
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
                   </div>
                 </div>
-              </div>
-            </SectionCard>
 
-            <SectionCard title="Informasi Kontak" icon={Mail} iconBg="bg-blue-50 text-blue-500">
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label-dark">Narahubung</label>
-                  <div className="relative">
-                    <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" value={form.contact_name || ''} onChange={e => setForm({ ...form, contact_name: e.target.value })} className="input-dark pl-10" placeholder="John Doe" />
-                  </div>
-                </div>
-                <div>
-                  <label className="label-dark">Email Kontak</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="email" value={form.contact_email || ''} onChange={e => setForm({ ...form, contact_email: e.target.value })} className="input-dark pl-10" placeholder="security@company.com" />
-                  </div>
-                </div>
-                <div>
-                  <label className="label-dark">Telepon</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="tel" value={form.contact_phone || ''} onChange={e => setForm({ ...form, contact_phone: e.target.value })} className="input-dark pl-10" placeholder="+62 21 1234 5678" />
-                  </div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Audit Scope Description</label>
+                  <textarea value={form.scope_description || ''} onChange={e => setForm({ ...form, scope_description: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all h-32 resize-none"
+                    placeholder="Describe the physical, logical, and organizational boundaries of this ISO 27001 audit..." />
                 </div>
               </div>
             </SectionCard>
 
-            <SectionCard title="Tipe Sistem dalam Scope" icon={Server} iconBg="bg-purple-50 text-purple-500">
-              <div className="grid grid-cols-4 gap-2">
-                {systemTypeOptions.map(({ id, label, icon }) => {
-                  const selected = (form.system_types || []).includes(id)
-                  return (
-                    <button key={id} type="button" onClick={() => toggleSystemType(id)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border transition-all ${
-                        selected ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}>
-                      <span>{icon}</span> {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Exposure Level" icon={Wifi} iconBg="bg-orange-50 text-orange-500">
-              <div className="grid grid-cols-2 gap-2">
-                {exposureLevels.map(({ value, label, desc, icon: Icon, bg, border, text, iconColor }) => {
-                  const selected = form.exposure_level === value
-                  return (
-                    <button key={value} type="button" onClick={() => setForm({ ...form, exposure_level: value as any })}
-                      className={`p-3.5 rounded-xl text-left border transition-all ${selected ? `${bg} ${border}` : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon className={`w-4 h-4 ${selected ? iconColor : 'text-slate-400'}`} />
-                        <p className={`text-xs font-semibold ${selected ? text : 'text-slate-600'}`}>{label}</p>
-                      </div>
-                      <p className="text-[11px] text-slate-400">{desc}</p>
-                    </button>
-                  )
-                })}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Risk Appetite" icon={TrendingUp} iconBg="bg-amber-50 text-amber-500">
-              <div className="grid grid-cols-3 gap-3">
-                {riskAppetites.map(({ value, label, desc, bg, border, text }) => {
-                  const selected = form.risk_appetite === value
-                  return (
-                    <button key={value} type="button" onClick={() => setForm({ ...form, risk_appetite: value as any })}
-                      className={`p-4 rounded-xl text-left border transition-all ${selected ? `${bg} ${border}` : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                      <p className={`text-sm font-bold mb-1 ${selected ? text : 'text-slate-700'}`}>{label}</p>
-                      <p className="text-[11px] text-slate-400">{desc}</p>
-                    </button>
-                  )
-                })}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Periode Audit" icon={Calendar} iconBg="bg-cyan-50 text-cyan-500">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label-dark">Tanggal Mulai</label>
-                  <input type="date" value={form.audit_period_start || ''} onChange={e => setForm({ ...form, audit_period_start: e.target.value })} className="input-dark" />
-                </div>
-                <div>
-                  <label className="label-dark">Tanggal Selesai</label>
-                  <input type="date" value={form.audit_period_end || ''} onChange={e => setForm({ ...form, audit_period_end: e.target.value })} className="input-dark" />
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Lingkup Audit (Scope Description)" icon={Shield} iconBg="bg-emerald-50 text-emerald-500">
-              <textarea value={form.scope_description || ''} onChange={e => setForm({ ...form, scope_description: e.target.value })}
-                className="input-dark h-32 resize-none"
-                placeholder="Deskripsikan ruang lingkup audit ISO 27001 ini..." />
-            </SectionCard>
-
-            <div className="flex justify-end gap-3 pb-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
               {org && (
                 <button onClick={() => { setEditing(false); setForm(org) }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium transition-all">
-                  <X className="w-4 h-4" /> Batal
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium transition-all">
+                  <X className="w-4 h-4" /> Cancel Changes
                 </button>
               )}
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 disabled:opacity-50">
+                className="flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 disabled:opacity-50">
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? 'Menyimpan...' : org ? 'Simpan Perubahan' : 'Buat Organisasi'}
+                {saving ? 'Saving...' : org ? 'Save All Changes' : 'Create Organization'}
               </button>
             </div>
           </div>

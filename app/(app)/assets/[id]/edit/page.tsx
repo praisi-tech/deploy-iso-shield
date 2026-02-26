@@ -12,12 +12,12 @@ import PageHeader from '@/components/ui/PageHeader'
 type AssetType = 'hardware' | 'software' | 'data' | 'service' | 'personnel' | 'facility'
 
 const assetTypes: { value: AssetType; label: string; desc: string }[] = [
-  { value: 'hardware', label: '🖥️ Hardware', desc: 'Physical devices, servers, workstations' },
-  { value: 'software', label: '💿 Software', desc: 'Applications, OS, firmware' },
-  { value: 'data', label: '📁 Data', desc: 'Databases, files, documents' },
-  { value: 'service', label: '⚡ Service', desc: 'Cloud services, APIs, utilities' },
-  { value: 'personnel', label: '👤 Personnel', desc: 'People with system access' },
-  { value: 'facility', label: '🏢 Facility', desc: 'Physical locations, data centers' },
+  { value: 'hardware', label: '🖥️ Hardware', desc: 'Physical devices, servers' },
+  { value: 'software', label: '💿 Software', desc: 'Apps, OS, firmware' },
+  { value: 'data', label: '📁 Data', desc: 'Databases, documents' },
+  { value: 'service', label: '⚡ Service', desc: 'Cloud, APIs, utilities' },
+  { value: 'personnel', label: '👤 Personnel', desc: 'Key staff and access' },
+  { value: 'facility', label: '🏢 Facility', desc: 'Physical locations' },
 ]
 
 interface FormState {
@@ -49,7 +49,7 @@ export default function EditAssetPage() {
   const [form, setForm] = useState<FormState>({
     name: '',
     description: '',
-    type: 'software', // Default value
+    type: 'software',
     owner: '',
     location: '',
     ip_address: '',
@@ -134,7 +134,6 @@ export default function EditAssetPage() {
     setDeleting(true)
     const supabase = createClient()
 
-    // Soft delete — set is_active = false
     const { error: err } = await supabase
       .from('assets')
       .update({ is_active: false, updated_at: new Date().toISOString() } as any)
@@ -162,7 +161,7 @@ export default function EditAssetPage() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="p-4 md:p-8 max-w-3xl mx-auto">
         <div className="glass rounded-xl p-16 text-center border border-white/5 bg-white/5">
           <RefreshCw className="w-8 h-8 text-slate-700 animate-spin mx-auto mb-4" />
           <p className="text-slate-500 text-sm animate-pulse">Loading asset data...</p>
@@ -172,24 +171,23 @@ export default function EditAssetPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <PageHeader
-        title="Edit Asset"
-        subtitle="Update asset information and risk assessment"
-        actions={
-          <Link
-            href={`/assets/${id}`}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
-        }
-      />
+    <div className="p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="flex flex-col gap-2">
+        <PageHeader
+          title="Edit Asset"
+          subtitle="Update asset information and risk assessment"
+        />
+        <Link
+          href={`/assets/${id}`}
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-300 text-sm transition-colors mb-4 md:mb-0"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Asset
+        </Link>
+      </div>
 
-      {/* Error & Success Messages */}
       {error && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="mb-6 flex items-start md:items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5 md:mt-0" />
           <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}
@@ -197,7 +195,7 @@ export default function EditAssetPage() {
       {success && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
           <Save className="w-5 h-5 text-green-400 flex-shrink-0" />
-          <p className="text-green-400 text-sm">Asset updated successfully! Redirecting...</p>
+          <p className="text-green-400 text-sm">Asset updated successfully!</p>
         </div>
       )}
 
@@ -212,23 +210,25 @@ export default function EditAssetPage() {
               <h3 className="font-semibold text-slate-200">Delete Asset?</h3>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Asset <span className="text-slate-200 font-medium">"{form.name}"</span> will be removed from the inventory. This action cannot be undone.
+              Asset <span className="text-slate-200 font-medium">"{form.name}"</span> will be removed from inventory.
             </p>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
               <button
+                type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-sm font-medium transition-all disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-slate-200 text-sm font-medium transition-all"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-all disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-all"
               >
                 {deleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleting ? 'Deleting...' : 'Yes, Delete'}
+                {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
@@ -237,10 +237,10 @@ export default function EditAssetPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6 mt-6">
         {/* Basic Info */}
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-5 md:p-6">
           <h3 className="text-sm font-semibold text-slate-300 mb-5">Asset Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="space-y-4">
+            <div>
               <label className="label-dark block mb-1.5">Asset Name *</label>
               <input
                 type="text"
@@ -251,7 +251,7 @@ export default function EditAssetPage() {
                 placeholder="e.g., Main Database Server"
               />
             </div>
-            <div className="col-span-2">
+            <div>
               <label className="label-dark block mb-1.5">Description</label>
               <textarea
                 value={form.description}
@@ -264,9 +264,9 @@ export default function EditAssetPage() {
         </div>
 
         {/* Asset Type */}
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-5 md:p-6">
           <h3 className="text-sm font-semibold text-slate-300 mb-4">Asset Type *</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {assetTypes.map(({ value, label, desc }) => (
               <button
                 key={value}
@@ -274,7 +274,7 @@ export default function EditAssetPage() {
                 onClick={() => setForm({ ...form, type: value })}
                 className={`p-3 rounded-xl text-left border transition-all ${
                   form.type === value
-                    ? 'bg-brand-500/15 border-brand-500/40'
+                    ? 'bg-brand-500/15 border-brand-500/40 ring-1 ring-brand-500/40'
                     : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
                 }`}
               >
@@ -286,9 +286,9 @@ export default function EditAssetPage() {
         </div>
 
         {/* Details */}
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-5 md:p-6">
           <h3 className="text-sm font-semibold text-slate-300 mb-5">Asset Details</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label-dark block mb-1.5">Owner / Custodian</label>
               <input
@@ -296,7 +296,6 @@ export default function EditAssetPage() {
                 value={form.owner}
                 onChange={e => setForm({ ...form, owner: e.target.value })}
                 className="input-dark w-full"
-                placeholder="IT Department / John Doe"
               />
             </div>
             <div>
@@ -306,17 +305,15 @@ export default function EditAssetPage() {
                 value={form.location}
                 onChange={e => setForm({ ...form, location: e.target.value })}
                 className="input-dark w-full"
-                placeholder="Data Center A / AWS Cloud"
               />
             </div>
             <div>
-              <label className="label-dark block mb-1.5">Vendor / Manufacturer</label>
+              <label className="label-dark block mb-1.5">Vendor</label>
               <input
                 type="text"
                 value={form.vendor}
                 onChange={e => setForm({ ...form, vendor: e.target.value })}
                 className="input-dark w-full"
-                placeholder="Microsoft, AWS, Oracle..."
               />
             </div>
             <div>
@@ -326,96 +323,100 @@ export default function EditAssetPage() {
                 value={form.version}
                 onChange={e => setForm({ ...form, version: e.target.value })}
                 className="input-dark w-full"
-                placeholder="e.g., 14.0.1, v2.3"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <label className="label-dark block mb-1.5">IP Address</label>
               <input
                 type="text"
                 value={form.ip_address}
                 onChange={e => setForm({ ...form, ip_address: e.target.value })}
                 className="input-dark w-full"
-                placeholder="192.168.1.100"
+                placeholder="0.0.0.0"
               />
             </div>
           </div>
         </div>
 
         {/* CIA Triad Rating */}
-        <div className="glass rounded-xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-slate-300">CIA Triad Rating</h3>
-            <div className="text-right">
-              <p className="text-xs text-slate-600">Criticality Score</p>
-              <p className={`text-lg font-bold ${critColor}`}>{score} — {criticality}</p>
+        <div className="glass rounded-xl p-5 md:p-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-300">CIA Triad Rating</h3>
+              <p className="text-xs text-slate-600">Impact of attribute loss on the organization.</p>
+            </div>
+            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-right min-w-[140px]">
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider">Criticality</p>
+              <p className={`text-lg font-bold leading-tight ${critColor}`}>{score} — {criticality}</p>
             </div>
           </div>
-          <p className="text-xs text-slate-600 mb-6">Importance level of each security attribute for this asset.</p>
-          <div className="space-y-6">
+          
+          <div className="space-y-8">
             <CIASlider
               label="Confidentiality (C)"
               name="confidentiality"
               value={form.confidentiality}
               onChange={v => setForm({ ...form, confidentiality: v })}
-              description="How sensitive is the data? Impact of unauthorized disclosure?"
+              description="Impact of unauthorized disclosure?"
             />
             <CIASlider
               label="Integrity (I)"
               name="integrity"
               value={form.integrity}
               onChange={v => setForm({ ...form, integrity: v })}
-              description="How critical is data accuracy? Impact of unauthorized modification?"
+              description="Impact of unauthorized modification?"
             />
             <CIASlider
               label="Availability (A)"
               name="availability"
               value={form.availability}
               onChange={v => setForm({ ...form, availability: v })}
-              description="How critical is uptime? Impact of asset being unavailable?"
+              description="Impact of asset being unavailable?"
             />
           </div>
-          <div className="mt-5 p-4 rounded-lg bg-slate-900/60 border border-slate-800">
-            <p className="text-xs text-slate-500 font-medium mb-2">Score Formula</p>
-            <p className="text-xs text-slate-600 font-mono">
-              ({form.confidentiality} × 0.4) + ({form.integrity} × 0.35) + ({form.availability} × 0.25) = <span className={`font-bold ${critColor}`}>{score}</span>
+          
+          <div className="mt-8 p-3.5 rounded-lg bg-slate-950/50 border border-slate-800/50">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Calculation Logic</p>
+            <p className="text-[11px] text-slate-600 font-mono break-all sm:break-normal">
+              (C:{form.confidentiality}×0.4) + (I:{form.integrity}×0.35) + (A:{form.availability}×0.25) = <span className={critColor}>{score}</span>
             </p>
           </div>
         </div>
 
         {/* Notes */}
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-5 md:p-6">
           <label className="label-dark block mb-1.5">Additional Notes</label>
           <textarea
             value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
             className="input-dark w-full h-24 resize-none"
-            placeholder="Dependencies, context, or additional notes..."
+            placeholder="Dependencies or additional context..."
           />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pb-10">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pb-10">
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-sm transition-all"
           >
             <Trash2 className="w-4 h-4" />
             Delete Asset
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link
               href={`/assets/${id}`}
-              className="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
+              className="text-center px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm transition-all"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={saving || success}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold transition-all disabled:opacity-50"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving...' : 'Save Changes'}
