@@ -52,8 +52,8 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-8 py-5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-8 py-5">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-slate-800">
               Welcome back, {profile.full_name?.split(' ')[0] || 'User'} 👋
@@ -63,16 +63,16 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link href="/assets/new"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white/80 text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-200 hover:-translate-y-0.5">
             <Plus className="w-4 h-4" /> Add Asset
           </Link>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-6">
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-4 gap-4">
+        {/* Stat Cards - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {STAT_CARDS.map(({ key, label, icon: Icon, href, light, text }) => (
             <Link key={key} href={href}
               className="group bg-white rounded-2xl p-5 border border-slate-200 hover:border-slate-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-200">
@@ -82,14 +82,14 @@ export default async function DashboardPage() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all" />
               </div>
-              <p className="text-3xl font-bold text-slate-800 tabular-nums">{statValues[key]}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-slate-800 tabular-nums">{statValues[key]}</p>
               <p className="text-sm text-slate-400 mt-1 font-medium">{label}</p>
             </Link>
           ))}
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-3 gap-4">
+        {/* Charts - Responsive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl p-5 border border-slate-200">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
@@ -100,7 +100,9 @@ export default async function DashboardPage() {
                 <p className="text-[10px] text-slate-400">By vulnerability level</p>
               </div>
             </div>
-            <RiskBarChart data={stats.riskDistribution} />
+            <div className="h-[200px] w-full">
+               <RiskBarChart data={stats.riskDistribution} />
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl p-5 border border-slate-200">
@@ -113,10 +115,12 @@ export default async function DashboardPage() {
                 <p className="text-[10px] text-slate-400">Asset type composition</p>
               </div>
             </div>
-            <AssetDonutChart data={stats.assetsByType} />
+            <div className="h-[200px] w-full">
+              <AssetDonutChart data={stats.assetsByType} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 md:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <Shield className="w-4 h-4 text-emerald-500" />
@@ -141,8 +145,9 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* High Risk + Recent Assets */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* High Risk + Recent Assets - Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* High Risk Items */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -184,6 +189,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* Recent Assets */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2">

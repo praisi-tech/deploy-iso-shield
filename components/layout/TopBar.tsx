@@ -15,6 +15,7 @@ interface TopBarProps {
     full_name: string | null
     email: string | null
     role: string
+    avatar_url: string | null
   } | null
 }
 
@@ -40,6 +41,7 @@ export default function TopBar({ profile }: TopBarProps) {
 
   return (
     <>
+      {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
@@ -55,17 +57,27 @@ export default function TopBar({ profile }: TopBarProps) {
               </button>
             </div>
             <p className="text-sm text-slate-500">Are you sure you want to sign out of this session?</p>
+            
             {profile && (
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 flex-shrink-0">
-                  {profile.full_name ? getInitials(profile.full_name) : '?'}
-                </div>
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="avatar"
+                    className="w-9 h-9 rounded-lg object-cover border border-slate-200"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 flex-shrink-0">
+                    {profile.full_name ? getInitials(profile.full_name) : '?'}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="text-sm text-slate-700 font-medium truncate">{profile.full_name || 'User'}</p>
                   <p className="text-xs text-slate-400 truncate">{profile.email}</p>
                 </div>
               </div>
             )}
+
             <div className="flex gap-2 pt-1">
               <button onClick={() => setShowLogoutModal(false)} disabled={loggingOut}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all disabled:opacity-50">
@@ -81,6 +93,7 @@ export default function TopBar({ profile }: TopBarProps) {
         </div>
       )}
 
+      {/* Main TopBar */}
       <div className="h-16 flex items-center justify-end px-6 gap-3 flex-shrink-0 border-b border-white/5"
         style={{ background: 'linear-gradient(90deg, #1a1f38 0%, #151929 100%)' }}>
 
@@ -103,10 +116,19 @@ export default function TopBar({ profile }: TopBarProps) {
               onClick={() => setOpen(o => !o)}
               className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-white/8 border border-transparent hover:border-white/10 transition-all"
             >
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-sm font-bold text-indigo-300 flex-shrink-0">
-                {profile.full_name ? getInitials(profile.full_name) : '?'}
-              </div>
-              <div className="text-left">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="avatar"
+                  className="w-9 h-9 rounded-xl object-cover border border-indigo-400/30 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-sm font-bold text-indigo-300 flex-shrink-0">
+                  {profile.full_name ? getInitials(profile.full_name) : '?'}
+                </div>
+              )}
+              
+              <div className="text-left hidden sm:block">
                 <p className="text-sm font-semibold text-white/90 leading-none mb-1">{profile.full_name || 'User'}</p>
                 <span className={`text-[10px] border rounded-md px-1.5 py-0.5 font-semibold inline-block ${roleBadgeColor[profile.role] || roleBadgeColor.auditee}`}>
                   {profile.role.toUpperCase()}
@@ -123,9 +145,17 @@ export default function TopBar({ profile }: TopBarProps) {
 
                   <div className="px-5 py-4 border-b border-white/8">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-base font-bold text-indigo-300 flex-shrink-0">
-                        {profile.full_name ? getInitials(profile.full_name) : '?'}
-                      </div>
+                      {profile.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt="avatar"
+                          className="w-11 h-11 rounded-xl object-cover border border-indigo-400/30 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-base font-bold text-indigo-300 flex-shrink-0">
+                          {profile.full_name ? getInitials(profile.full_name) : '?'}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-white/90 truncate">{profile.full_name || 'User'}</p>
                         <p className="text-xs text-white/40 truncate mt-0.5">{profile.email}</p>
